@@ -1,7 +1,7 @@
 //---------- INCLUDES ----------
 
 #include <Arduino.h>
-//#include "pin_config.h"
+#include "pin_config.h"
 #include "Adafruit_BME280.h"
 #include "Sodaq_LSM303AGR.h"
 #include "SD.h"
@@ -220,10 +220,11 @@ void testFileIO(fs::FS &fs, const char *path)
   file.close();
 }
 
+Pin pins;
 //---------- MAIN PROGRAM ---------
 void setup()
 {
-  // configurePins();
+  pins.configurePins();
 
   // Initialisation
   Serial.begin(115200);
@@ -293,6 +294,7 @@ void loop()
   // Serial.println(lsm303.getMagZ());
   // Serial.println("-------------------");
   // Serial.println();
+
   delay(1000);
   Serial.println("allo");
   // No-Op

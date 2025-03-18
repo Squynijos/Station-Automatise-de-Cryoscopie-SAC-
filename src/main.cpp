@@ -25,7 +25,8 @@ void setup()
   delay(500);
 
   bme280.begin(ADDR_BME);
-  lsm303.disableMagnetometer();
+  lsm303.disableAccelerometer();
+  lsm303.enableMagnetometer();
 
   // Logique
   // Serial.println(bme280.readTemperature());
@@ -33,10 +34,17 @@ void setup()
 
 void loop()
 {
+  Serial.println("--------BME--------");
   Serial.println(bme280.readTemperature());
   Serial.println(bme280.readPressure());
   Serial.println(bme280.readHumidity());
+  Serial.println("-------------------");
   Serial.println();
+  Serial.println("--------LSM--------");
+  Serial.println(lsm303.getMagX());
+  Serial.println(lsm303.getMagY());
+  Serial.println(lsm303.getMagZ());
+  Serial.println("-------------------");
   delay(500);
   // No-Op
 }

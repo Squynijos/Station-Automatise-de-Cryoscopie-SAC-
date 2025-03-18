@@ -220,10 +220,11 @@ void testFileIO(fs::FS &fs, const char *path)
   file.close();
 }
 
+Pin pins;
 //---------- MAIN PROGRAM ---------
 void setup()
 {
-  // configurePins();
+  pins.configurePins();
 
   // Initialisation
   Serial.begin(115200);
@@ -292,6 +293,6 @@ void loop()
   // Serial.println("-------------------");
   // Serial.println();
   delay(15000);
-  Serial.println("allo")
+  Serial.println("allo");
   // No-Op
 }

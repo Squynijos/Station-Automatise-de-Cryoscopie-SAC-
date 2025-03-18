@@ -1,7 +1,7 @@
 //---------- INCLUDES ----------
 
 #include <Arduino.h>
-#include "pin_config.h"
+//#include "pin_config.h"
 #include "Adafruit_BME280.h"
 #include "Sodaq_LSM303AGR.h"
 #include "SD.h"
@@ -228,15 +228,15 @@ void setup()
   // Initialisation
   Serial.begin(115200);
   delay(500);
-
   bme280.begin(ADDR_BME);
   lsm303.disableAccelerometer();
   lsm303.enableMagnetometer();
-
+  
   // PINS Config
-  pinMode(DEL_B, OUTPUT);
-  digitalWrite(DEL_B, HIGH);
-
+  //pinMode(DEL_B, OUTPUT);
+  //digitalWrite(DEL_B, HIGH);
+  
+  Serial.print("port serie good");
   // Carte SD
   if (!SD.begin(5))
   {
@@ -272,14 +272,16 @@ void setup()
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
-  writeFile(SD, "/mesure.txt", "Hello ");
-
+  
+  writeFile(SD, "/Mesure.txt", "Temp,Press,Hum,X,Y,Z");
   // Logique
   // Serial.println(bme280.readTemperature());
 }
 
 void loop()
 {
+
+  appendFile(SD, "/Mesure.txt" , "allo");
   // Serial.println("--------BME--------");
   // Serial.println(bme280.readTemperature());
   // Serial.println(bme280.readPressure());
@@ -291,7 +293,7 @@ void loop()
   // Serial.println(lsm303.getMagZ());
   // Serial.println("-------------------");
   // Serial.println();
-  delay(15000);
-  Serial.println("allo")
+  delay(1000);
+  Serial.println("allo");
   // No-Op
 }

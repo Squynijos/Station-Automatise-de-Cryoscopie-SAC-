@@ -1,10 +1,8 @@
-
-
-
-
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h"
-
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
 //--------- DEFINES ---------
 #define RXD2 16
 #define TXD2 17

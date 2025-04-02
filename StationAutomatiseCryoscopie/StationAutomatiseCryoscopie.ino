@@ -1,3 +1,8 @@
+
+
+//--------- INCLUDES ---------
+#include "Adafruit_BME280.h"
+#include "Definitions.h"
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h"
 #include "FS.h"
@@ -22,7 +27,7 @@ void setup() {
   Serial.begin(115200);
   
   // Init Objects
-  bme.begin(0x76);
+  initI2C();
 
   //PIN Config
   pinMode(13, OUTPUT);
@@ -30,7 +35,7 @@ void setup() {
 }
 
 //--------- LOOP DE DBG ---------
-void loop() { 
+void loop() {
 #if DEBUG
 //LOOP uniquement utilisé pour le débug
   Serial.println("Temp:\t" + String(bme.readTemperature()));

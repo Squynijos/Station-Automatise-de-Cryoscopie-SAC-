@@ -39,10 +39,18 @@
 #define P_VBAT 15
 
 //---------- Adresses -----------
-#define ADDR_BME 0x76
+#define ADDR_BME_INT 0x76
+#define ADDR_ANEMO 2
+#define ADDR_GIROU 3
+#define ADDR_BME_EXT 1
+#define ADDR_LUX 5
 
 //---------- Flags --------------
 #define DEBUG true
+
+//---------- Configs ------------
+#define BAUD_RS485 9600
+#define BAUD_DEBUG 115200
 
 //---------- Renaming -----------
 

@@ -1,36 +1,45 @@
+
+
+
+
+//--------- INCLUDES ---------
 #include "Adafruit_BME280.h"
-#include "Sodaq_LSM303AGR.h"
- 
+
+//--------- DEFINES ---------
 #define RXD2 16
 #define TXD2 17
+
+#define DEBUG true
  
-#define GPS_BAUD 115200
- 
+//--------- OBJECTS ---------
 Adafruit_BME280 bme;
-Sodaq_LSM303AGR lsm303;
  
-HardwareSerial gpsSerial(2);
-int counter = 0;
- 
+HardwareSerial SerialSW(2);
+
+//--------- VARIABLES ---------
+
+
+//--------- MAIN PROG ---------
 void setup() {
   Serial.begin(115200);
+  
+  // Init Objects
+  bme.begin(0x76);
+
+  //PIN Config
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
-  bme.begin(0x76);
-  lsm303.enableMagnetometer();
- 
-  //gpsSerial.begin(GPS_BAUD, SERIAL_8N1, RXD2, TXD2);
- 
 }
+
+//--------- LOOP DE DBG ---------
+void loop() { 
+#if DEBUG
+//LOOP uniquement utilisé pour le débug
+  Serial.println("Temp:\t" + String(bme.readTemperature()));
+  Serial.println("Hum:\t" + String(bme.readHumidity()));
+  Serial.println("Press:\t" + String(bme.readPressure()));
  
-void loop() {
-  //gpsSerial.println(String(counter));
- 
-  Serial.println("Temp: " + String(bme.readTemperature()));
- 
-  // increment the counter
-  counter++;
- 
+  Serial.println();
   delay(1000);
- 
+#endif
 }

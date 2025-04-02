@@ -17,19 +17,15 @@ void setup() {
   Serial.begin(115200);
   
   // Init Objects
-  Serial.println("allo");
   initI2C();
-  Serial.println("done");
+
   //PIN Config
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
-  Serial.println("end");
 }
 
 //--------- LOOP DE DBG ---------
-void loop() { 
-  Serial.println("loop!");
-  Serial.println(DEBUG);
+void loop() {
 #if DEBUG
 //LOOP uniquement utilisé pour le débug
   Serial.println("Temp:\t" + String(bme.readTemperature()));

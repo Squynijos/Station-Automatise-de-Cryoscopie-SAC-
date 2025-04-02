@@ -3,11 +3,15 @@
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h"
 #include "Definitions.h"
+#include "ModbusRTUMaster.h"
  
 //--------- OBJECTS ---------
 Adafruit_BME280 bme;
  
 HardwareSerial SerialSW(2);
+HardwareSerial SerialRS485(3);
+
+ModbusRTUMaster modbus(SerialRS485, PIN_DE);
 
 //--------- VARIABLES ---------
 

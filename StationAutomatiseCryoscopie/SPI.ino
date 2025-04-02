@@ -1,6 +1,6 @@
 
 bool initSPI(){
-  if(!SD.begin(5)){
+  if(!SD.begin(P_CS_SD)){
     Serial.println("Card Mount Failed");
     return false;
   }
@@ -16,8 +16,8 @@ bool openNewFile(fs::FS &fs, const char * dirname){
 
   if(!root.isDirectory()){
     Serial.println("creating directory");
-    createDir(fs, "D:Mesure");
-    return;
+    createDir(fs, "/" + dirname);
+    return true;
 
 }
 

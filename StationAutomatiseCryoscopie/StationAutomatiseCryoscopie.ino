@@ -1,15 +1,8 @@
 
 
-
-
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h"
-
-//--------- DEFINES ---------
-#define RXD2 16
-#define TXD2 17
-
-#define DEBUG true
+#include "Definitions.h"
  
 //--------- OBJECTS ---------
 Adafruit_BME280 bme;
@@ -24,15 +17,19 @@ void setup() {
   Serial.begin(115200);
   
   // Init Objects
-  bme.begin(0x76);
-
+  Serial.println("allo");
+  initI2C();
+  Serial.println("done");
   //PIN Config
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
+  Serial.println("end");
 }
 
 //--------- LOOP DE DBG ---------
 void loop() { 
+  Serial.println("loop!");
+  Serial.println(DEBUG);
 #if DEBUG
 //LOOP uniquement utilisé pour le débug
   Serial.println("Temp:\t" + String(bme.readTemperature()));

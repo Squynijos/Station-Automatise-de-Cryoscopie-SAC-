@@ -44,6 +44,13 @@
 //---------- Flags --------------
 #define DEBUG true
 
+//---------- Macro --------------
+#if DEBUG
+  #define D(...) (__VA_ARGS__)
+#else
+  #define D(...) (void(0))
+#endif
+
 //---------- Renaming -----------
 
 

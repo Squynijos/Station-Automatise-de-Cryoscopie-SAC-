@@ -1,7 +1,7 @@
 
 bool initI2C(){
-  bme.begin(ADDR_BME_INT);
-  Serial.println("nice");
+  bme.begin(ADDR_BME);
+  
   return true;
 }
 

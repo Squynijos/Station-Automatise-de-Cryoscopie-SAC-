@@ -1,3 +1,4 @@
+//Pour les alimentation et le sleep
 
 void initPower(){
   pinMode(P_SHDN_12V, OUTPUT);  

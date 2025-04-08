@@ -19,7 +19,7 @@ void loop() {
   if (gpsSerial.available()) {
     // Read data and display it
     String message = gpsSerial.readStringUntil('\n');
-    Serial.println("Received: " + message);
+    Serial.println(message);
   }
 
 }

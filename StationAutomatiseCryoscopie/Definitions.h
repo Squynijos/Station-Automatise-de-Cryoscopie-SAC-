@@ -7,9 +7,8 @@
 #define P_RX_SW 16
 #define P_TX_SW 17
 #define P_TX_485 4
-#define P_TX_485 12
-#define P_TX_DBG 1
-#define P_RX_DBG 3
+#define P_RX_485 12
+
   //I2C
 #define P_SCL 22
 #define P_SDA 21
@@ -27,8 +26,8 @@
 #define P_DEL_R 7
 #define P_DEL_G 6
   //ON-OFF
-#define P_SHDN_12 2
-#define P_SHDN_5 5
+#define P_SHDN_12V 2
+#define P_SHDN_5V 5
 #define P_SHDN_3V3 13
 #define P_SAT 14
   //RS485
@@ -39,10 +38,20 @@
 #define P_VBAT 15
 
 //---------- Adresses -----------
-#define ADDR_BME 0x76
+#define ADDR_BME_INT 0x76
+#define ADDR_ANEMO 2
+#define ADDR_GIROU 3
+#define ADDR_BME_EXT 1
+#define ADDR_LUX 5
+#define ADDR_ACCEL 0x19
+#define ADDR_MAG 0x1E
 
 //---------- Flags --------------
 #define DEBUG true
+
+//---------- Configs ------------
+#define BAUD_RS485 9600
+#define BAUD_DEBUG 115200
 
 //---------- Renaming -----------
 

@@ -46,12 +46,23 @@
 #define ADDR_ACCEL 0x19
 #define ADDR_MAG 0x1E
 
+//---------- Registres ----------
+#define REG_VIT   0
+#define REG_DIR   1
+#define REG_ANGLE 0
+#define REG_TEMP  1
+#define REG_PRESS 2
+#define REG_HUM   0
+#define REG_LUM   1
+
 //---------- Flags --------------
 #define DEBUG true
 
 //---------- Configs ------------
 #define BAUD_RS485 9600
 #define BAUD_DEBUG 115200
+#define MB_TIMEOUT 500
+#define MB_MAX_RETRY 3
 
 //---------- Renaming -----------
 

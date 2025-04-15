@@ -24,6 +24,7 @@ ModbusRTUMaster modbus(SerialRS485, P_DE);
 
 //--------- VARIABLES ---------
 struct Mesures{
+  float vBat;
   float angleVent;
   float dirVent;
   float vitVent;
@@ -33,6 +34,7 @@ struct Mesures{
   float tempInt;
   float humInt;
   float pressInt;
+  float lum;
   float accelX;
   float accelY;
   float accelZ;

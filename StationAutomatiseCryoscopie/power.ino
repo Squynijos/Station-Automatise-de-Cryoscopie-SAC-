@@ -15,3 +15,11 @@ void enable3V3()  {digitalWrite(P_SHDN_3V3, HIGH);}
 void disable12V() {digitalWrite(P_SHDN_12V, LOW);}
 void disable5V()  {digitalWrite(P_SHDN_5V, LOW);}
 void disable3V3() {digitalWrite(P_SHDN_3V3, LOW);}
+
+void readVBat(DataStruct &dataStruct){ //À TESTER
+  dataStruct.m.vBat = digitalRead(P_VBAT);
+}
+
+void goToSleep(){
+  //TODO
+}

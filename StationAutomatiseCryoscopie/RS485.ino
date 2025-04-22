@@ -13,19 +13,19 @@ void readVitVent(DataStruct &dataStruct){ //À TESTER
   dataStruct.m.vitVent = reg[0];
 }
 
-void readDirVent(DataStruct &dataStruct){ //À TESTER
+void readDirVent(DataStruct &dataStruct){
   uint16_t reg[2] = {0, 0};
   modbus.readHoldingRegisters(ADDR_GIROU, REG_ANGLE, reg, 2);
   dataStruct.m.angleVent = reg[0];
   dataStruct.m.dirVent   = reg[1];
 }
 
-void readBmeExt(DataStruct &dataStruct){ //À TESTER
+void readBmeExt(DataStruct &dataStruct){
   uint16_t reg[3] = {0, 0, 0};
   modbus.readHoldingRegisters(ADDR_BME_EXT, REG_HUM, reg, 3);
-  dataStruct.m.humExt     = reg[0];
-  dataStruct.m.tempExt    = reg[1];
-  dataStruct.m.pressExt   = reg[2];
+  dataStruct.m.humExt     = reg[0]/10.0;
+  dataStruct.m.tempExt    = reg[1]/10.0;
+  dataStruct.m.pressExt   = reg[2]/10.0;
 }
 
 void readLum(DataStruct &dataStruct){ //À TESTER

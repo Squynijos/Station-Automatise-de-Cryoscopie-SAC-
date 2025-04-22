@@ -9,13 +9,13 @@ void initI2C(){
   lsm.enableAccelerometer();
 }
 
-void readBmeInt(DataStruct &dataStruct){ //À TESTER
+void readBmeInt(DataStruct &dataStruct){
   dataStruct.m.tempInt  = bme.readTemperature();
   dataStruct.m.humInt   = bme.readHumidity();
   dataStruct.m.pressInt = bme.readPressure();
 }
 
-void readMagAccel(DataStruct &dataStruct){ //À TESTER
+void readMagAccel(DataStruct &dataStruct)
   //Magnétomètre
   dataStruct.m.magX = lsm.getMagX();
   dataStruct.m.magY = lsm.getMagY();

@@ -4,7 +4,9 @@
   - SAT
   - SD
   - Sleep
+  - Lecture batterie
   - Gestion Erreur
+  petite puce : logique du code
 */
 
 //--------- INCLUDES ---------
@@ -66,6 +68,7 @@ void setup() {
   // Init Objects
   initI2C();
   initRS485();
+  //initSPI();
 }
 
 //--------- LOOP DE DBG ---------
@@ -98,7 +101,7 @@ void loop() {
   Serial.println("AccelZ:\t\t"+String(data.m.accelZ));
   Serial.println("-------------------------------------");
 
-  logSD(dataFile, "Allo");
+  //logSD(dataFile, "Allo");
 
   Serial.println();
   delay(1000);

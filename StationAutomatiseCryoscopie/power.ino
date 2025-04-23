@@ -17,7 +17,7 @@ void disable5V()  {digitalWrite(P_SHDN_5V, LOW);}
 void disable3V3() {digitalWrite(P_SHDN_3V3, LOW);}
 
 void readVBat(DataStruct &dataStruct){ //À TESTER
-  dataStruct.m.vBat = digitalRead(P_VBAT);
+  dataStruct.m.vBat = digitalRead(P_VBAT); //TODO :produit croisé 
 }
 
 void goToSleep(){

@@ -64,6 +64,8 @@
 #define MB_TIMEOUT 500
 #define MB_MAX_RETRY 3
 
-//---------- Renaming -----------
-
+//---------- PATHS SD -----------
+#define HEADER "Timestamp, Longitude, Latitude, VBat, TemperatureInt, PressionInt, HumiditeInt, AccelX, AccelY, AccelZ, TemperatureExt, PressionExt, HumiditeExt, VitesseVent, DirectionVent, AngleVent, Luminosite"
+#define DATA_FILE "/data.csv"
+#define CONFIG_FILE "/config.json"
 

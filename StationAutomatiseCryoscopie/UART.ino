@@ -3,10 +3,10 @@ void initUART(){
 
 }
 
-void readGPS(DataStruct &dataStruct){
+void readGPS(DataStruct &ds){
 
 }
 
-void sendSAT(DataStruct &dataStruct){
+void sendSAT(DataStruct &ds){
 
 }

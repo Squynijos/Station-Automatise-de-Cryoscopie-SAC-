@@ -1,28 +1,28 @@
 //Pour les capteurs internes
 
-void initI2C(){
+void initI2C(){ //Fonctionnelle
   if(!bme.begin(ADDR_BME_INT)){
     Serial.println("Erreur avec BME");
   }
 
-  lsm.enableMagnetometer();
+  lsm.disableMagnetometer();
   lsm.enableAccelerometer();
 }
 
-void readBmeInt(DataStruct &dataStruct){
-  dataStruct.m.tempInt  = bme.readTemperature();
-  dataStruct.m.humInt   = bme.readHumidity();
-  dataStruct.m.pressInt = bme.readPressure();
+void readBmeInt(DataStruct &ds){ //Fonctionnelle
+  ds.m.tempInt  = bme.readTemperature();
+  ds.m.humInt   = bme.readHumidity();
+  ds.m.pressInt = bme.readPressure();
 }
 
-void readMagAccel(DataStruct &dataStruct)
+void readMagAccel(DataStruct &ds){ //Fonctionnelle
   //Magnétomètre
-  dataStruct.m.magX = lsm.getMagX();
-  dataStruct.m.magY = lsm.getMagY();
-  dataStruct.m.magZ = lsm.getMagZ();
+  // ds.m.magX = lsm.getMagX();
+  // ds.m.magY = lsm.getMagY();
+  // ds.m.magZ = lsm.getMagZ();
 
   //Accéléromètre
-  dataStruct.m.accelX = lsm.getX();
-  dataStruct.m.accelY = lsm.getY();
-  dataStruct.m.accelZ = lsm.getZ();
+  ds.m.accelX = lsm.getX();
+  ds.m.accelY = lsm.getY();
+  ds.m.accelZ = lsm.getZ();
 }

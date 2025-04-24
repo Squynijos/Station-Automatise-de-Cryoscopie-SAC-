@@ -2,7 +2,7 @@
   - Modbus - Changement adresse
   - GPS
   - SAT
-  - SD
+  - SD : Configs
   - Sleep
   - Lecture batterie
   - Gestion Erreur
@@ -12,6 +12,7 @@
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h" //2.2.4
 #include "Definitions.h"
+#include <FS.h>
 #include "ModbusRTUMaster.h" //1.0.5
 #include <SD.h>
 #include "Sodaq_LSM303AGR.h" //2.0.1
@@ -26,10 +27,12 @@ HardwareSerial SerialRS485(Serial2);
 ModbusRTUMaster modbus(SerialRS485, P_DE);
 
 //--------- Constants ---------
-const String dataFile = "data.csv";
 
 //--------- VARIABLES ---------
 struct Mesures{
+  float timestamp;
+  float longitude;
+  float latitude;
   float vBat;
   float angleVent;
   float dirVent;
@@ -44,9 +47,9 @@ struct Mesures{
   float accelX;
   float accelY;
   float accelZ;
-  float magX;
-  float magY;
-  float magZ;
+  // float magX;
+  // float magY;
+  // float magZ;
 };
 
 union DataStruct{
@@ -68,12 +71,13 @@ void setup() {
   // Init Objects
   initI2C();
   initRS485();
-  //initSPI();
+  initSPI();
 }
 
 //--------- LOOP DE DBG ---------
 void loop() {
   //Read all values
+  readVBat(data);
   readDirVent(data);
   readBmeExt(data);
   readLum(data);
@@ -82,27 +86,54 @@ void loop() {
 
   //Print result
   Serial.println("-------------------------------------");
-  Serial.println("Dir Vent:\t"+String(data.m.dirVent));
-  Serial.println("Angle Vent:\t"+String(data.m.angleVent));
-  Serial.println("Vit Vent:\t"+String(data.m.vitVent));
-  Serial.println("Temp Ext:\t"+String(data.m.tempExt));
-  Serial.println("Hum Ext:\t"+String(data.m.humExt));
-  Serial.println("Press Ext:\t"+String(data.m.pressExt));
-  Serial.println("Lum:\t\t"+String(data.m.lum));
+  Serial.println("V Bat:\t\t"   + String(data.m.vBat));
+  Serial.println("Dir Vent:\t"  + String(data.m.dirVent));
+  Serial.println("Angle Vent:\t"+ String(data.m.angleVent));
+  Serial.println("Vit Vent:\t"  + String(data.m.vitVent));
+  Serial.println("Temp Ext:\t"  + String(data.m.tempExt));
+  Serial.println("Hum Ext:\t"   + String(data.m.humExt));
+  Serial.println("Press Ext:\t" + String(data.m.pressExt));
+  Serial.println("Lum:\t\t"     + String(data.m.lum));
 
-  Serial.println("Temp Int:\t"+String(data.m.tempInt));
-  Serial.println("Hum Int:\t"+String(data.m.humInt));
-  Serial.println("Press Int:\t"+String(data.m.pressInt));
-  Serial.println("MagX:\t\t"+String(data.m.magX));
-  Serial.println("MagY:\t\t"+String(data.m.magY));
-  Serial.println("MagZ:\t\t"+String(data.m.magZ));
-  Serial.println("AccelX:\t\t"+String(data.m.accelX));
-  Serial.println("AccelY:\t\t"+String(data.m.accelY));
-  Serial.println("AccelZ:\t\t"+String(data.m.accelZ));
-  Serial.println("-------------------------------------");
-
-  //logSD(dataFile, "Allo");
+  Serial.println("Temp Int:\t"  + String(data.m.tempInt));
+  Serial.println("Hum Int:\t"   + String(data.m.humInt));
+  Serial.println("Press Int:\t" + String(data.m.pressInt));
+  // Serial.println("MagX:\t\t"    + String(data.m.magX));
+  // Serial.println("MagY:\t\t"    + String(data.m.magY));
+  // Serial.println("MagZ:\t\t"    + String(data.m.magZ));
+  Serial.println("AccelX:\t\t"  + String(data.m.accelX));
+  Serial.println("AccelY:\t\t"  + String(data.m.accelY));
+  Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
   Serial.println();
+  createBin(SD, "/data.bin", data);
+  DataStruct d;
+  readBin(SD, "/data.bin", d);
+
+  Serial.println("V Bat:\t\t"   + String(d.m.vBat));
+  Serial.println("Dir Vent:\t"  + String(d.m.dirVent));
+  Serial.println("Angle Vent:\t"+ String(d.m.angleVent));
+  Serial.println("Vit Vent:\t"  + String(d.m.vitVent));
+  Serial.println("Temp Ext:\t"  + String(d.m.tempExt));
+  Serial.println("Hum Ext:\t"   + String(d.m.humExt));
+  Serial.println("Press Ext:\t" + String(d.m.pressExt));
+  Serial.println("Lum:\t\t"     + String(d.m.lum));
+
+  Serial.println("Temp Int:\t"  + String(d.m.tempInt));
+  Serial.println("Hum Int:\t"   + String(d.m.humInt));
+  Serial.println("Press Int:\t" + String(d.m.pressInt));
+  // Serial.println("MagX:\t\t"    + String(d.m.magX));
+  // Serial.println("MagY:\t\t"    + String(d.m.magY));
+  // Serial.println("MagZ:\t\t"    + String(d.m.magZ));
+  Serial.println("AccelX:\t\t"  + String(d.m.accelX));
+  Serial.println("AccelY:\t\t"  + String(d.m.accelY));
+  Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
+
+  logCSV(SD, DATA_FILE, data);
+
+  Serial.println("-------------------------------------");
+
+
+  // Serial.println();
   delay(1000);
 }

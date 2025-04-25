@@ -28,12 +28,15 @@ bool initSPI(){
   // Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
   //Verif d'existance des différent fichier
-  //if(!SD.exists(DATA_FILE)){
-    createTxt(SD, DATA_FILE, HEADER);
-  //}
+  if(!SD.exists(DATA_FILE)){
+    createCSV(DATA_FILE, HEADER);
+  }
 
   if(!SD.exists(CONFIG_FILE)){
-    createTxt(SD, CONFIG_FILE, ""); //TODO: Configs de base + Lecture configs
+    createJson(CONFIG_FILE, config); //TODO: Configs de base + Lecture configs
+  }
+  else{
+    readJson(CONFIG_FILE, config);
   }
 
   //TODO: Directory pour les bin si existe pas
@@ -41,10 +44,10 @@ bool initSPI(){
   return true;
 }
 
-// void listDir(fs::FS &fs, const char* dirname, uint8_t levels){
+// void listDir(const char* dirname, uint8_t levels){
 //   Serial.printf("Listing directory: %s\n", dirname);
 
-//   File root = fs.open(dirname);
+//   File root = SD.open(dirname);
 //   if(!root){
 //     Serial.println("Failed to open directory");
 //     return;
@@ -60,7 +63,7 @@ bool initSPI(){
 //       Serial.print("  DIR : ");
 //       Serial.println(file.name());
 //       if(levels){
-//         listDir(fs, file.name(), levels -1);
+//         listDir(SD, file.name(), levels -1);
 //       }
 //     } else {
 //       Serial.print("  FILE: ");
@@ -72,28 +75,142 @@ bool initSPI(){
 //   }
 // }
 
-// void createDir(fs::FS &fs, const char* path){
+// void createDir(const char* path){
 //   Serial.printf("Creating Dir: %s\n", path);
-//   if(fs.mkdir(path)){
+//   if(SD.mkdir(path)){
 //     Serial.println("Dir created");
 //   } else {
 //     Serial.println("mkdir failed");
 //   }
 // }
 
-// void removeDir(fs::FS &fs, const char* path){
+// void removeDir(const char* path){
 //   Serial.printf("Removing Dir: %s\n", path);
-//   if(fs.rmdir(path)){
+//   if(SD.rmdir(path)){
 //     Serial.println("Dir removed");
 //   } else {
 //     Serial.println("rmdir failed");
 //   }
 // }
 
-void readBin(fs::FS &fs, const char* path, DataStruct &ds){ //Fonctionnelle
+//----- JSON -----
+void createJson(const char* path, Config &cfg){ //TODO
+  Serial.printf("Writing json: %s\n", path);
+
+  // Open file for writing
+  File file = SD.open(path, FILE_WRITE);
+  if(!file){
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+
+  //Initializing default values in struct
+  Serial.println("Conf: " + String(cfg.acquisitionParHeure));
+
+  // Allocate a temporary JsonDocument
+  JsonDocument doc;
+
+  // Set the default values in the document
+  //EX: doc["hostname"] = 0;
+  doc["acquisitionParHeure"]        = cfg.acquisitionParHeure;
+  doc["mb"]["baud"]                 = cfg.mb.baud;
+  doc["mb"]["maxRetry"]             = cfg.mb.maxRetry;
+  doc["mb"]["timeout"]              = cfg.mb.timeout;
+  doc["sat"]["maxMsgLength"]        = cfg.sat.maxMsgLength;
+  doc["sat"]["transmissionParJour"] = cfg.sat.transmissionParJour;
+  doc["lum"]["offset"]              = cfg.lum.offset;
+  doc["lum"]["facteur"]             = cfg.lum.facteur;
+  doc["tempInt"]["offset"]          = cfg.tempInt.offset;
+  doc["tempInt"]["facteur"]         = cfg.tempInt.facteur;
+  doc["humInt"]["offset"]           = cfg.humInt.offset;
+  doc["humInt"]["facteur"]          = cfg.humInt.facteur;
+  doc["pressInt"]["offset"]         = cfg.pressInt.offset;
+  doc["pressInt"]["facteur"]        = cfg.pressInt.facteur;
+  doc["tempExt"]["offset"]          = cfg.tempExt.offset;
+  doc["tempExt"]["facteur"]         = cfg.tempExt.facteur;
+  doc["humExt"]["offset"]           = cfg.humExt.offset;
+  doc["humExt"]["facteur"]          = cfg.humExt.facteur;
+  doc["pressExt"]["offset"]         = cfg.pressExt.offset;
+  doc["pressExt"]["facteur"]        = cfg.pressExt.facteur;
+  doc["anemo"]["offset"]            = cfg.anemo.offset;
+  doc["anemo"]["facteur"]           = cfg.anemo.facteur;
+  doc["girou"]["offset"]            = cfg.girou.offset;
+  doc["girou"]["facteur"]           = cfg.girou.facteur;
+
+
+  // Serialize JSON to file
+  if (serializeJson(doc, file) == 0) {
+    Serial.println("Failed to write to file");
+  }
+
+  file.close();
+}
+
+void readJson(const char* path, Config &cfg){ //TODO
+  // Open file for reading
+  File file = SD.open(path);
+
+  // Allocate a temporary JsonDocument
+  JsonDocument doc;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, file);
+  if (error){
+    Serial.println(F("Failed to read file, using default configuration"));
+  }
+
+  // Copy values from the JsonDocument to the Config struct
+  //EX: config.port = doc["port"];
+  cfg.acquisitionParHeure     = doc["acquisitionParHeure"];
+  cfg.mb.baud                 = doc["mb"]["baud"];
+  cfg.mb.maxRetry             = doc["mb"]["maxRetry"];
+  cfg.mb.timeout              = doc["mb"]["timeout"];
+  cfg.sat.maxMsgLength        = doc["sat"]["maxMsgLength"] = ;
+  cfg.sat.transmissionParJour = doc["sat"]["transmissionParJour"];
+  cfg.lum.offset              = doc["lum"]["offset"];
+  cfg.lum.facteur             = doc["lum"]["facteur"];
+  cfg.tempInt.offset          = doc["tempInt"]["offset"];
+  cfg.tempInt.facteur         = doc["tempInt"]["facteur"];
+  cfg.humInt.offset           = doc["humInt"]["offset"];
+  cfg.humInt.facteur          = doc["humInt"]["facteur"];
+  cfg.pressInt.offset         = doc["pressInt"]["offset"];
+  cfg.pressInt.facteur        = doc["pressInt"]["facteur"];
+  cfg.tempExt.offset          = doc["tempExt"]["offset"];
+  cfg.tempExt.facteur         = doc["tempExt"]["facteur"];
+  cfg.humExt.offset           = doc["humExt"]["offset"];
+  cfg.humExt.facteur          = doc["humExt"]["facteur"];
+  cfg.pressExt.offset         = doc["pressExt"]["offset"];
+  cfg.pressExt.facteur        = doc["pressExt"]["facteur"];
+  cfg.anemo.offset            = doc["anemo"]["offset"];
+  cfg.anemo.facteur           = doc["anemo"]["facteur"];
+  cfg.girou.offset            = doc["girou"]["offset"];
+  cfg.girou.facteur           = doc["girou"]["facteur"];
+
+  // Close the file (Curiously, File's destructor doesn't close the file)
+  file.close();
+}
+
+//----- BIN -----
+void createBin(const char* path, DataStruct &ds){ //Fonctionnelle
+  Serial.printf("Writing file: %s\n", path);
+
+  File file = SD.open(path, FILE_WRITE);
+  if(!file){
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+  if(file.write(ds.raw, sizeof(ds.raw))){
+    Serial.println("File written");
+  } else {
+    Serial.println("Write failed");
+  }
+  file.close();
+}
+
+void readBin(const char* path, DataStruct &ds){ //Fonctionnelle
   Serial.printf("Reading file: %s\n", path);
 
-  File file = fs.open(path);
+  File file = SD.open(path);
   if(!file){
     Serial.println("Failed to open file for reading");
     return;
@@ -106,10 +223,11 @@ void readBin(fs::FS &fs, const char* path, DataStruct &ds){ //Fonctionnelle
   file.close();
 }
 
-void createTxt(fs::FS &fs, const char * path, const char * header){
+//----- CSV -----
+void createCSV(const char * path, const char * header){
   Serial.printf("Writing file: %s\n", path);
 
-  File file = fs.open(path, FILE_WRITE);
+  File file = SD.open(path, FILE_WRITE);
   if(!file){
     Serial.println("Failed to open file for writing");
     return;
@@ -123,26 +241,10 @@ void createTxt(fs::FS &fs, const char * path, const char * header){
   file.close();
 }
 
-void createBin(fs::FS &fs, const char* path, DataStruct &ds){ //Fonctionnelle
-  Serial.printf("Writing file: %s\n", path);
-
-  File file = fs.open(path, FILE_WRITE);
-  if(!file){
-    Serial.println("Failed to open file for writing");
-    return;
-  }
-  if(file.write(ds.raw, sizeof(ds.raw))){
-    Serial.println("File written");
-  } else {
-    Serial.println("Write failed");
-  }
-  file.close();
-}
-
-void logCSV(fs::FS &fs, const char* path, DataStruct &ds){ //Fonctionnelle
+void logCSV(const char* path, DataStruct &ds){ //Fonctionnelle
   Serial.printf("Appending to file: %s\n", path);
   
-  File file = fs.open(path, FILE_APPEND);
+  File file = SD.open(path, FILE_APPEND);
   if(!file){
     Serial.println("Failed to open file for appending");
     return;
@@ -153,15 +255,6 @@ void logCSV(fs::FS &fs, const char* path, DataStruct &ds){ //Fonctionnelle
     Serial.println("Append failed");
   }
   file.close();
-}
-
-void deleteFile(fs::FS &fs, const char* path){ //Fonctionnelle
-  Serial.printf("Deleting file: %s\n", path);
-  if(fs.remove(path)){
-    Serial.println("File deleted");
-  } else {
-    Serial.println("Delete failed");
-  }
 }
 
 String formatLog(DataStruct &ds){ //Fonctionnelle
@@ -185,3 +278,14 @@ String formatLog(DataStruct &ds){ //Fonctionnelle
     String(ds.m.lum)
   );
 }
+
+//----- DEL -----
+void deleteFile(const char* path){ //Fonctionnelle
+  Serial.printf("Deleting file: %s\n", path);
+  if(SD.remove(path)){
+    Serial.println("File deleted");
+  } else {
+    Serial.println("Delete failed");
+  }
+}
+

@@ -7,10 +7,13 @@
   - Lecture batterie
   - Gestion Erreur
   petite puce : logique du code
+  autre puce : Thingsboard
 */
 
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h" //2.2.4
+#include "ArduinoJson.h"
+#include "Configs.h"
 #include "Definitions.h"
 #include <FS.h>
 #include "ModbusRTUMaster.h" //1.0.5
@@ -29,6 +32,9 @@ ModbusRTUMaster modbus(SerialRS485, P_DE);
 //--------- Constants ---------
 
 //--------- VARIABLES ---------
+Config config;
+
+// Structure pour l'acquisition mesures
 struct Mesures{
   float timestamp;
   float longitude;
@@ -106,9 +112,9 @@ void loop() {
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
   Serial.println();
-  createBin(SD, "/data.bin", data);
+  createBin("/data.bin", data);
   DataStruct d;
-  readBin(SD, "/data.bin", d);
+  readBin("/data.bin", d);
 
   Serial.println("V Bat:\t\t"   + String(d.m.vBat));
   Serial.println("Dir Vent:\t"  + String(d.m.dirVent));
@@ -129,7 +135,7 @@ void loop() {
   Serial.println("AccelY:\t\t"  + String(d.m.accelY));
   Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
 
-  logCSV(SD, DATA_FILE, data);
+  logCSV(DATA_FILE, data);
 
   Serial.println("-------------------------------------");
 

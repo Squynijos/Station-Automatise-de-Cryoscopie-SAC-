@@ -59,13 +59,10 @@
 #define DEBUG true
 
 //---------- Configs ------------
-#define BAUD_RS485 9600
 #define BAUD_DEBUG 115200
-#define MB_TIMEOUT 500
-#define MB_MAX_RETRY 3
 
 //---------- PATHS SD -----------
-#define HEADER "Timestamp, Longitude, Latitude, VBat, TemperatureInt, PressionInt, HumiditeInt, AccelX, AccelY, AccelZ, TemperatureExt, PressionExt, HumiditeExt, VitesseVent, DirectionVent, AngleVent, Luminosite"
+#define HEADER "Timestamp, Longitude, Latitude, HDOP, VBat, TemperatureInt, PressionInt, HumiditeInt, AccelX, AccelY, AccelZ, TemperatureExt, PressionExt, HumiditeExt, VitesseVent, DirectionVent, AngleVent, Luminosite"
 #define DATA_FILE "/data.csv"
 #define CONFIG_FILE "/config.json"
 

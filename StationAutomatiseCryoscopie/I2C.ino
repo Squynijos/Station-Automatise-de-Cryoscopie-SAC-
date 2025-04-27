@@ -1,8 +1,9 @@
 //Pour les capteurs internes
 
 void initI2C(){ //Fonctionnelle
+D(Serial.println("Initialisation I2C"));
   if(!bme.begin(ADDR_BME_INT)){
-    Serial.println("Erreur avec BME");
+    D(Serial.println("\t! Erreur avec BME"));
   }
 
   lsm.disableMagnetometer();

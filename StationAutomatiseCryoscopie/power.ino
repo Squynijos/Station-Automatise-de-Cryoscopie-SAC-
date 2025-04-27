@@ -17,9 +17,20 @@ void disable5V()  {digitalWrite(P_SHDN_5V, LOW);}
 void disable3V3() {digitalWrite(P_SHDN_3V3, LOW);}
 
 void readVBat(DataStruct &ds){ //À TESTER
-  ds.m.vBat = analogRead(P_VBAT); //TODO :produit croisé 
+  voltage = analogRead(P_VBAT);
+  voltage *= ((1e7 + 1e6) / 1e6); // Multiply back 1 MOhm / (10 MOhm + 1 MOhm)
+  voltage *= 3.3; // Multiply by 3.3V reference voltage
+  voltage /= 4096; // Convert to voltage
+  ds.m.vBat = voltage;
 }
 
-void goToSleep(){
+void goToSleep(){ //À TESTER
+  //Éteindre les sources d'alimentation
   //TODO
+
+  // Configuration des périphériques à conserver en fonction
+  //TODO
+
+  // Mettre le esp32 en deep sleep
+  // TODO
 }

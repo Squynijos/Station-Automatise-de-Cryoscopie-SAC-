@@ -1,21 +1,22 @@
 //Pour la carte SD
 bool initSPI(){ //Fonctionnelle
   // Initialisation de la SD
+  D(Serial.println("Initializing SD Card"));
   if(!SD.begin(P_CS_SD)){
-    Serial.println("Card Mount Failed");
+    D(Serial.println("\t! Card Mount Failed"));
     return false;
   }
 
   // Verif avec type de carte
   uint8_t cardType = SD.cardType();
   if(cardType == CARD_NONE){
-    Serial.println("No SD card attached");
+    D(Serial.println("\t! No SD card attached"));
     return false;
   }
 
   // Print le type et les détails de la carte
   if(DEBUG){
-    Serial.print("SD Card Type: ");
+    Serial.print("\t- SD Card Type: ");
     if(cardType == CARD_MMC){
       Serial.println("MMC");
     } else if(cardType == CARD_SD){
@@ -28,7 +29,7 @@ bool initSPI(){ //Fonctionnelle
 
     // Information supplémentaire sur la carte
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+    Serial.printf("\t- SD Card Size: %lluMB\n", cardSize);
   }
 
   //Verif d'existance des différents fichiers, sinon création
@@ -104,7 +105,7 @@ bool createJson(const char* path, Config &cfg){ //Fonctionnelle
   // Open file for writing
   File file = SD.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("\tFailed to open file for writing");
+    D(Serial.println("\t! Failed to open file for writing"));
     return false;
   }
 
@@ -114,25 +115,37 @@ bool createJson(const char* path, Config &cfg){ //Fonctionnelle
   // Set the default values in the document
   //EX: doc["hostname"] = 0;
   doc["acquisitionParHeure"]        = cfg.acquisitionParHeure;
+
   doc["mb"]["baud"]                 = cfg.mb.baud;
   doc["mb"]["maxRetry"]             = cfg.mb.maxRetry;
+  doc["mb"]["retryDelai"]           = cfg.mb.retryDelai;
   doc["mb"]["timeout"]              = cfg.mb.timeout;
+
+  doc["sat"]["baud"]                = cfg.sat.baud;
   doc["sat"]["maxMsgLength"]        = cfg.sat.maxMsgLength;
   doc["sat"]["transmissionParJour"] = cfg.sat.transmissionParJour;
+  doc["sat"]["timeout"]             = cfg.sat.timeout;
+
+  doc["gps"]["baud"]                = cfg.gps.baud;
+  doc["gps"]["timeout"]             = cfg.gps.timeout;
+
   doc["lum"]["offset"]              = cfg.lum.offset;
   doc["lum"]["facteur"]             = cfg.lum.facteur;
+
   doc["tempInt"]["offset"]          = cfg.tempInt.offset;
   doc["tempInt"]["facteur"]         = cfg.tempInt.facteur;
   doc["humInt"]["offset"]           = cfg.humInt.offset;
   doc["humInt"]["facteur"]          = cfg.humInt.facteur;
   doc["pressInt"]["offset"]         = cfg.pressInt.offset;
   doc["pressInt"]["facteur"]        = cfg.pressInt.facteur;
+
   doc["tempExt"]["offset"]          = cfg.tempExt.offset;
   doc["tempExt"]["facteur"]         = cfg.tempExt.facteur;
   doc["humExt"]["offset"]           = cfg.humExt.offset;
   doc["humExt"]["facteur"]          = cfg.humExt.facteur;
   doc["pressExt"]["offset"]         = cfg.pressExt.offset;
   doc["pressExt"]["facteur"]        = cfg.pressExt.facteur;
+
   doc["anemo"]["offset"]            = cfg.anemo.offset;
   doc["anemo"]["facteur"]           = cfg.anemo.facteur;
   doc["girou"]["offset"]            = cfg.girou.offset;
@@ -141,7 +154,7 @@ bool createJson(const char* path, Config &cfg){ //Fonctionnelle
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0) {
-    Serial.println("\tFailed to write to file");
+    D(Serial.println("\t! Failed to write to file"));
     file.close();
     return false;
   }
@@ -156,7 +169,7 @@ bool readJson(const char* path, Config &cfg){ //À TESTER
   // Open file for reading
   File file = SD.open(path);
   if(!file){
-    Serial.println("\tFailed to open file for writing");
+    D(Serial.println("\t! Failed to open file for writing"));
     return false;
   }
 
@@ -166,7 +179,7 @@ bool readJson(const char* path, Config &cfg){ //À TESTER
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error){
-    Serial.println("\tFailed to read file, using default configuration");
+    D(Serial.println("\t! Failed to read file, using default configuration"));
     file.close();
     return false;
   }
@@ -174,25 +187,37 @@ bool readJson(const char* path, Config &cfg){ //À TESTER
   // Copy values from the JsonDocument to the Config struct
   //EX: config.port = doc["port"];
   cfg.acquisitionParHeure     = doc["acquisitionParHeure"];
+
   cfg.mb.baud                 = doc["mb"]["baud"];
   cfg.mb.maxRetry             = doc["mb"]["maxRetry"];
+  cfg.mb.retryDelai           = doc["mb"]["retryDelai"];
   cfg.mb.timeout              = doc["mb"]["timeout"];
+
+  cfg.sat.baud                = doc["sat"]["baud"];
   cfg.sat.maxMsgLength        = doc["sat"]["maxMsgLength"];
   cfg.sat.transmissionParJour = doc["sat"]["transmissionParJour"];
+  cfg.sat.timeout             = doc["sat"]["timeout"];
+
+  cfg.gps.baud                = doc["gps"]["baud"];
+  cfg.gps.timeout             = doc["gps"]["timeout"];
+
   cfg.lum.offset              = doc["lum"]["offset"];
   cfg.lum.facteur             = doc["lum"]["facteur"];
+
   cfg.tempInt.offset          = doc["tempInt"]["offset"];
   cfg.tempInt.facteur         = doc["tempInt"]["facteur"];
   cfg.humInt.offset           = doc["humInt"]["offset"];
   cfg.humInt.facteur          = doc["humInt"]["facteur"];
   cfg.pressInt.offset         = doc["pressInt"]["offset"];
   cfg.pressInt.facteur        = doc["pressInt"]["facteur"];
+
   cfg.tempExt.offset          = doc["tempExt"]["offset"];
   cfg.tempExt.facteur         = doc["tempExt"]["facteur"];
   cfg.humExt.offset           = doc["humExt"]["offset"];
   cfg.humExt.facteur          = doc["humExt"]["facteur"];
   cfg.pressExt.offset         = doc["pressExt"]["offset"];
   cfg.pressExt.facteur        = doc["pressExt"]["facteur"];
+
   cfg.anemo.offset            = doc["anemo"]["offset"];
   cfg.anemo.facteur           = doc["anemo"]["facteur"];
   cfg.girou.offset            = doc["girou"]["offset"];
@@ -209,11 +234,11 @@ bool createBin(const char* path, DataStruct &ds){ //Fonctionnelle
 
   File file = SD.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("\tFailed to open file for writing");
+    D(Serial.println("\t! Failed to open file for writing"));
     return false;
   }
   if(!file.write(ds.raw, sizeof(ds.raw))){
-    Serial.println("\tWrite failed");
+    D(Serial.println("\t! Write failed"));
     file.close();
     return false;
   }
@@ -222,16 +247,16 @@ bool createBin(const char* path, DataStruct &ds){ //Fonctionnelle
 }
 
 bool readBin(const char* path, DataStruct &ds){ //Fonctionnelle
-  Serial.printf("Reading bin: %s\n", path);
+  D(Serial.printf("Reading bin: %s\n", path));
 
   File file = SD.open(path);
   if(!file){
-    Serial.println("\tFailed to open file for reading");
+    D(Serial.println("\t! Failed to open file for reading"));
     return false;;
   }
 
   if(file.read(ds.raw, sizeof(ds.raw)) == -1){
-    Serial.println("\tErreur de lecture");
+    D(Serial.println("\t! Erreur de lecture"));
     file.close();
     return false;
   }
@@ -246,12 +271,12 @@ bool createCSV(const char * path, const char * header){ //Fonctionnelle
 
   File file = SD.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("\tFailed to open file for writing");
+    D(Serial.println("\t! Failed to open file for writing"));
     return false;
   }
 
   if(!file.print(String(header))){
-    Serial.println("\tWrite failed");
+    D(Serial.println("\t! Write failed"));
     file.close();
     return false;
   }
@@ -265,12 +290,12 @@ bool logCSV(const char* path, DataStruct &ds){ //Fonctionnelle
   
   File file = SD.open(path, FILE_APPEND);
   if(!file){
-    Serial.println("\tFailed to open file for appending");
+    D(Serial.println("\t! Failed to open file for appending"));
     return false;
   }
 
   if(!file.println(formatLog(ds))){
-    Serial.println("\tAppend failed");
+    D(Serial.println("\t! Append failed"));
     file.close();
     return false;
   }
@@ -284,6 +309,7 @@ String formatLog(DataStruct &ds){ //Fonctionnelle
     String(ds.m.timestamp) + "," +
     String(ds.m.longitude) + "," +
     String(ds.m.latitude) + "," + 
+    String(ds.m.hdop) + "," + 
     String(ds.m.vBat) + "," + 
     String(ds.m.tempInt) + "," +
     String(ds.m.pressInt) + "," +
@@ -306,7 +332,7 @@ bool deleteFile(const char* path){ //Fonctionnelle
   D(Serial.printf("Deleting file: %s\n", path));
 
   if(!SD.remove(path)){
-    Serial.println("\tDelete failed");
+    D(Serial.println("\t! Delete failed"));
     return false;
   }
 

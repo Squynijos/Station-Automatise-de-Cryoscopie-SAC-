@@ -1,9 +1,10 @@
 /*------ TODO ------
-  - Modbus - Changement adresse
-  - GPS
+  - Modbus - Changement adresse - tester le retry
+  - GPS - à tester
   - SAT
+  - RTC
   - Sleep
-  - Lecture batterie
+  - Lecture batterie - à tester
   - Gestion Erreur
   petite puce : logique du code
   autre puce : Thingsboard
@@ -15,20 +16,35 @@
 #include "Configs.h"
 #include "Definitions.h"
 #include <FS.h>
+#include "IridiumSBD.h"      // https://github.com/sparkfun/SparkFun_IridiumSBD_I2C_Arduino_Library (v3.0.6)
 #include "ModbusRTUMaster.h" //1.0.5
+#include "RTCZero.h"         //1.6.0
 #include <SD.h>
 #include "Sodaq_LSM303AGR.h" //2.0.1
 #include <SPI.h>
+#include "TimeLib.h"         // https://github.com/PaulStoffregen/Time (v1.6.1)
+#include "TinyGPS++.h"       // https://github.com/mikalhart/TinyGPSPlus (v1.0.3)
 #include <Wire.h>
  
 //--------- OBJECTS ---------
+// Capteurs internes
 Adafruit_BME280 bme;
 Sodaq_LSM303AGR lsm;
 
+// UART
+HardwareSerial SerialSatGps(Serial1);
+IridiumSBD modemSat(SerialSatGnss);
+
+TinyGPSPlus gps;
+TinyGPSCustom gpsFix(gnss, "GPGGA", 6); // Fix quality
+TinyGPSCustom gpsValidity(gnss, "GPRMC", 2); // Validity
+
+// Modbus
 HardwareSerial SerialRS485(Serial2);
 ModbusRTUMaster modbus(SerialRS485, P_DE);
 
 //--------- Constants ---------
+const uint8_t BAT_CUT_OFF = 11; //V
 
 //--------- VARIABLES ---------
 RTC_DATA_ATTR int bootCount = 0; // L'attribut RTC_DATA_ATTR indique que le variable est conserver en mémoire même entre les sleeps
@@ -40,6 +56,7 @@ struct Mesures{
   float timestamp;
   float longitude;
   float latitude;
+  float hdop;
   float vBat;
   float angleVent;
   float dirVent;
@@ -67,30 +84,67 @@ DataStruct data;
 
 //--------- MAIN PROG ---------
 void setup() {
-  Serial.begin(115200);
-  delay(500);
+  if(DEBUG){
+    Serial.begin(115200);
+    delay(500);
+
+    //On active tout
+    initPower();
+    enable3V3();
+    enable5V();
+    enable12V();
+
+    initI2C();
+    initRS485();
+    initSPI();
+    initUART();
+
+    //On skip le reste du setup
+    return;
+  }
   
-  //Power
+  //### NON DEBUG CODE ###
+  data.m.vBat = readVBat();
+  if(data.m.vBat < BAT_CUT_OFF){
+    goToSleep();
+  }
+
+  //Power on internal devices and configurations
   initPower();
   enable3V3();
-  enable12V();
 
-  // Init Objects
   initI2C();
   initRS485();
   initSPI();
+  initUART();
 
-  if(!DEBUG){
-    //Éteindre les sources d'alimentation
-    //TODO
+  //Read config file
+  //TODO
 
-    // Configuration des périphériques à conserver en fonction
-    //TODO
+  //Read GPS et sync RTC
+  //TODO
 
-    // Mettre le esp32 en deep sleep
-    // TODO
+  //Get internal sensors values
+  //TODO
+
+  //Get external sensors values
+  enable12V();
+  //TODO : Get val and deal with errors
+  disable12V();
+
+  //Save data as bin on SD
+  //TODO
+  bootCount++;
+
+  //Moyenne des données après 5 iterations
+  if(bootCount % 5 == 0){
+    //TODO : Moyenne
+    //TODO : Log SD
+    //TODO : Send sat
   }
-  
+
+  //Sleep
+  goToSleep();  
 }
 
 //--------- LOOP DE DBG ---------
@@ -151,8 +205,6 @@ void loop() {
   //logCSV(DATA_FILE, data);
 
   Serial.println("-------------------------------------");
-
-
-  // Serial.println();
+  Serial.println();
   delay(1000);
 }

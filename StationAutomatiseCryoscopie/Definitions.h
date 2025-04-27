@@ -69,3 +69,10 @@
 #define DATA_FILE "/data.csv"
 #define CONFIG_FILE "/config.json"
 
+//---------- MACROS -------------
+#if DEBUG
+  #define D(...) (__VA_ARGS__)
+#else
+  #define D(...) (void(0))
+#endif
+

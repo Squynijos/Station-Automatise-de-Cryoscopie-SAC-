@@ -4,6 +4,7 @@
 struct ModbusConf{
   int baud = 9600;
   uint8_t maxRetry = 3;
+  uint16_t retryDelai = 60; //ms
   uint16_t timeout = 500; //ms
 };
 

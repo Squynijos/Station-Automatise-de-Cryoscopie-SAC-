@@ -1,5 +1,5 @@
 //Pour la carte SD
-bool initSPI(){
+bool initSPI(){ //Fonctionnelle
   // Initialisation de la SD
   if(!SD.begin(P_CS_SD)){
     Serial.println("Card Mount Failed");
@@ -12,28 +12,32 @@ bool initSPI(){
     Serial.println("No SD card attached");
     return false;
   }
-  Serial.print("SD Card Type: ");
-  if(cardType == CARD_MMC){
-    Serial.println("MMC");
-  } else if(cardType == CARD_SD){
-    Serial.println("SDSC");
-  } else if(cardType == CARD_SDHC){
-    Serial.println("SDHC");
-  } else {
-    Serial.println("UNKNOWN");
+
+  // Print le type et les détails de la carte
+  if(DEBUG){
+    Serial.print("SD Card Type: ");
+    if(cardType == CARD_MMC){
+      Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+
+    // Information supplémentaire sur la carte
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);
   }
 
-  // Information supplémentaire sur la carte
-  // uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-  // Serial.printf("SD Card Size: %lluMB\n", cardSize);
-
-  //Verif d'existance des différent fichier
+  //Verif d'existance des différents fichiers, sinon création
   if(!SD.exists(DATA_FILE)){
     createCSV(DATA_FILE, HEADER);
   }
 
   if(!SD.exists(CONFIG_FILE)){
-    createJson(CONFIG_FILE, config); //TODO: Configs de base + Lecture configs
+    createJson(CONFIG_FILE, config);
   }
   else{
     readJson(CONFIG_FILE, config);
@@ -94,18 +98,15 @@ bool initSPI(){
 // }
 
 //----- JSON -----
-void createJson(const char* path, Config &cfg){ //TODO
-  Serial.printf("Writing json: %s\n", path);
+bool createJson(const char* path, Config &cfg){ //Fonctionnelle
+  D(Serial.printf("Writing json: %s\n", path));
 
   // Open file for writing
   File file = SD.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("Failed to open file for writing");
-    return;
+    Serial.println("\tFailed to open file for writing");
+    return false;
   }
-
-  //Initializing default values in struct
-  Serial.println("Conf: " + String(cfg.acquisitionParHeure));
 
   // Allocate a temporary JsonDocument
   JsonDocument doc;
@@ -140,15 +141,24 @@ void createJson(const char* path, Config &cfg){ //TODO
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0) {
-    Serial.println("Failed to write to file");
+    Serial.println("\tFailed to write to file");
+    file.close();
+    return false;
   }
 
   file.close();
+  return true;
 }
 
-void readJson(const char* path, Config &cfg){ //TODO
+bool readJson(const char* path, Config &cfg){ //À TESTER
+  D(Serial.printf("Writing json: %s\n", path));
+
   // Open file for reading
   File file = SD.open(path);
+  if(!file){
+    Serial.println("\tFailed to open file for writing");
+    return false;
+  }
 
   // Allocate a temporary JsonDocument
   JsonDocument doc;
@@ -156,7 +166,9 @@ void readJson(const char* path, Config &cfg){ //TODO
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error){
-    Serial.println(F("Failed to read file, using default configuration"));
+    Serial.println("\tFailed to read file, using default configuration");
+    file.close();
+    return false;
   }
 
   // Copy values from the JsonDocument to the Config struct
@@ -165,7 +177,7 @@ void readJson(const char* path, Config &cfg){ //TODO
   cfg.mb.baud                 = doc["mb"]["baud"];
   cfg.mb.maxRetry             = doc["mb"]["maxRetry"];
   cfg.mb.timeout              = doc["mb"]["timeout"];
-  cfg.sat.maxMsgLength        = doc["sat"]["maxMsgLength"] = ;
+  cfg.sat.maxMsgLength        = doc["sat"]["maxMsgLength"];
   cfg.sat.transmissionParJour = doc["sat"]["transmissionParJour"];
   cfg.lum.offset              = doc["lum"]["offset"];
   cfg.lum.facteur             = doc["lum"]["facteur"];
@@ -188,73 +200,83 @@ void readJson(const char* path, Config &cfg){ //TODO
 
   // Close the file (Curiously, File's destructor doesn't close the file)
   file.close();
+  return true;
 }
 
 //----- BIN -----
-void createBin(const char* path, DataStruct &ds){ //Fonctionnelle
-  Serial.printf("Writing file: %s\n", path);
+bool createBin(const char* path, DataStruct &ds){ //Fonctionnelle
+  D(Serial.printf("Writing bin: %s\n", path));
 
   File file = SD.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("Failed to open file for writing");
-    return;
+    Serial.println("\tFailed to open file for writing");
+    return false;
   }
-  if(file.write(ds.raw, sizeof(ds.raw))){
-    Serial.println("File written");
-  } else {
-    Serial.println("Write failed");
+  if(!file.write(ds.raw, sizeof(ds.raw))){
+    Serial.println("\tWrite failed");
+    file.close();
+    return false;
   }
   file.close();
+  return true;
 }
 
-void readBin(const char* path, DataStruct &ds){ //Fonctionnelle
-  Serial.printf("Reading file: %s\n", path);
+bool readBin(const char* path, DataStruct &ds){ //Fonctionnelle
+  Serial.printf("Reading bin: %s\n", path);
 
   File file = SD.open(path);
   if(!file){
-    Serial.println("Failed to open file for reading");
-    return;
+    Serial.println("\tFailed to open file for reading");
+    return false;;
   }
 
   if(file.read(ds.raw, sizeof(ds.raw)) == -1){
-    Serial.println("Erreur de lecture");
+    Serial.println("\tErreur de lecture");
+    file.close();
+    return false;
   }
 
   file.close();
+  return true;
 }
 
 //----- CSV -----
-void createCSV(const char * path, const char * header){
-  Serial.printf("Writing file: %s\n", path);
+bool createCSV(const char * path, const char * header){ //Fonctionnelle
+  D(Serial.printf("Writing csv: %s\n", path));
 
   File file = SD.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("Failed to open file for writing");
-    return;
+    Serial.println("\tFailed to open file for writing");
+    return false;
   }
-  Serial.println(String(header));
-  if(file.print(String(header))){
-    Serial.println("File written");
-  } else {
-    Serial.println("Write failed");
+
+  if(!file.print(String(header))){
+    Serial.println("\tWrite failed");
+    file.close();
+    return false;
   }
+
   file.close();
+  return true;
 }
 
-void logCSV(const char* path, DataStruct &ds){ //Fonctionnelle
-  Serial.printf("Appending to file: %s\n", path);
+bool logCSV(const char* path, DataStruct &ds){ //Fonctionnelle
+  D(Serial.printf("Appending to file: %s\n", path));
   
   File file = SD.open(path, FILE_APPEND);
   if(!file){
-    Serial.println("Failed to open file for appending");
-    return;
+    Serial.println("\tFailed to open file for appending");
+    return false;
   }
-  if(file.println(formatLog(ds))){
-      Serial.println("Message appended");
-  } else {
-    Serial.println("Append failed");
+
+  if(!file.println(formatLog(ds))){
+    Serial.println("\tAppend failed");
+    file.close();
+    return false;
   }
+
   file.close();
+  return true;
 }
 
 String formatLog(DataStruct &ds){ //Fonctionnelle
@@ -280,12 +302,14 @@ String formatLog(DataStruct &ds){ //Fonctionnelle
 }
 
 //----- DEL -----
-void deleteFile(const char* path){ //Fonctionnelle
-  Serial.printf("Deleting file: %s\n", path);
-  if(SD.remove(path)){
-    Serial.println("File deleted");
-  } else {
-    Serial.println("Delete failed");
+bool deleteFile(const char* path){ //Fonctionnelle
+  D(Serial.printf("Deleting file: %s\n", path));
+
+  if(!SD.remove(path)){
+    Serial.println("\tDelete failed");
+    return false;
   }
+
+  return true;
 }
 

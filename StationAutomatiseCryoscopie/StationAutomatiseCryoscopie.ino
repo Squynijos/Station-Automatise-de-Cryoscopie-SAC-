@@ -2,7 +2,6 @@
   - Modbus - Changement adresse
   - GPS
   - SAT
-  - SD : Configs
   - Sleep
   - Lecture batterie
   - Gestion Erreur
@@ -32,10 +31,12 @@ ModbusRTUMaster modbus(SerialRS485, P_DE);
 //--------- Constants ---------
 
 //--------- VARIABLES ---------
+RTC_DATA_ATTR int bootCount = 0; // L'attribut RTC_DATA_ATTR indique que le variable est conserver en mémoire même entre les sleeps
 Config config;
 
 // Structure pour l'acquisition mesures
 struct Mesures{
+  int iteration;
   float timestamp;
   float longitude;
   float latitude;
@@ -78,6 +79,18 @@ void setup() {
   initI2C();
   initRS485();
   initSPI();
+
+  if(!DEBUG){
+    //Éteindre les sources d'alimentation
+    //TODO
+
+    // Configuration des périphériques à conserver en fonction
+    //TODO
+
+    // Mettre le esp32 en deep sleep
+    // TODO
+  }
+  
 }
 
 //--------- LOOP DE DBG ---------
@@ -135,7 +148,7 @@ void loop() {
   Serial.println("AccelY:\t\t"  + String(d.m.accelY));
   Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
 
-  logCSV(DATA_FILE, data);
+  //logCSV(DATA_FILE, data);
 
   Serial.println("-------------------------------------");
 

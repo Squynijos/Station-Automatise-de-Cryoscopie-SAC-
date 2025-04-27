@@ -3,21 +3,40 @@
 void initRS485(){ //Fonctionnelle
   pinMode(P_RE, INPUT);
   pinMode(P_DE, OUTPUT);
-  modbus.begin(BAUD_RS485, SERIAL_8N1, P_RX_485, P_TX_485);
-  modbus.setTimeout(MB_TIMEOUT);
+  modbus.begin(config.mb.baud, SERIAL_8N1, P_RX_485, P_TX_485);
+  modbus.setTimeout(config.mb.timeout);
 }
 
-void readVitVent(DataStruct &ds){ //À TESTER
+void readVitVent(DataStruct &ds){ //Fonctionnelle
   uint16_t reg[1] = {0};
   modbus.readHoldingRegisters(ADDR_ANEMO, REG_VIT, reg, 1);
   ds.m.vitVent = reg[0];
 }
 
-void readDirVent(DataStruct &ds){ //À TESTER
+uint16_t readDirVent(DataStruct &ds){ //À TESTER, puis copier sur les autres
+  uint8_t tryCount = 0;
+  uint16_t errMB = 0;
   uint16_t reg[2] = {0, 0};
-  modbus.readHoldingRegisters(ADDR_GIROU, REG_ANGLE, reg, 2);
-  ds.m.angleVent = reg[0];
-  ds.m.dirVent   = reg[1];
+
+  //Tentative de lecture des données
+  do{
+    modbus.readHoldingRegisters(ADDR_GIROU, REG_ANGLE, reg, 2);
+    errMB = modbus.getExceptionResponse(); //A RETIRER si on update la lib
+    modbus.clearExceptionResponse(); //A RETIRER si on update la lib
+    //Y a t-il une erreur?
+    if(errMB){
+      tryCount++;
+      delay(config.mb.retryDelai);
+    }
+  }
+  while(errMB && tryCount < config.mb.maxRetry);
+
+  //Est-ce qu'on a réssi?
+  if(!errMB){
+    ds.m.angleVent = reg[0];
+    ds.m.dirVent   = reg[1];
+  }
+  return errMB;
 }
 
 void readBmeExt(DataStruct &ds){ //Fonctionnelle
@@ -28,7 +47,7 @@ void readBmeExt(DataStruct &ds){ //Fonctionnelle
   ds.m.pressExt   = reg[2]/10.0;
 }
 
-void readLum(DataStruct &ds){ //À TESTER
+void readLum(DataStruct &ds){ //Fonctionnelle
   uint16_t reg[1] = {0};
   modbus.readHoldingRegisters(ADDR_LUX, REG_LUM, reg, 1);
   ds.m.lum = reg[0];

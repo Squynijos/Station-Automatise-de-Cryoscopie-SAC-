@@ -1,4 +1,5 @@
 //Pour le communication avec le GPS et le SAT
+
 void initUART(){ //À TESTER
   //Les pins pour le select
   pinMode(P_S0, OUTPUT);
@@ -115,7 +116,7 @@ bool readGPS(DataStruct &ds){ //À TESTER
   return true;
 }
 
-void sendSAT(DataStruct &ds){ //À TESTER
+bool sendSAT(DataStruct &ds){ //À TESTER
   //Active ls switch sur le bon appareil
   digitalWrite(P_S0, LOW);
   digitalWrite(P_S1, HIGH);
@@ -126,9 +127,30 @@ void sendSAT(DataStruct &ds){ //À TESTER
   //Assigne le bon Baudrate
   SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_RX_SW, P_TX_SW);
 
-  //Reading Values
+  //Initialisation
+  D(Serial.println("Starting le modem Iridium"));
+  int retCode = modemSat.begin();
+
+  if(retCode != ISBD_SUCCESS){
+    if(retCode == ISBD_NO_MODEM_DETECTED){
+      D(Serial.println("\t! Aucun modem trouve, verifier les branchement"));
+      return false;
+    }
+
+    D(Serial.println("\t! Failed to initialize modem, error: " + String(retCode)));
+    return false;
+  }
+
+  //Writing Values
+  //TODO
+
+  //Check if success
+  //TODO
+
+  //Putting modem to sleep
   //TODO
 
   //Closing UART Port
   SerialSatGps.end();
+  return true;
 }

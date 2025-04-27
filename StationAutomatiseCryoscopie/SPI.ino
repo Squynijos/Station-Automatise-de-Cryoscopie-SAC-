@@ -1,4 +1,5 @@
 //Pour la carte SD
+
 bool initSPI(){ //Fonctionnelle
   // Initialisation de la SD
   D(Serial.println("Initializing SD Card"));

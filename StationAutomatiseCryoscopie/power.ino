@@ -24,13 +24,31 @@ void readVBat(DataStruct &ds){ //À TESTER
   ds.m.vBat = voltage;
 }
 
-void goToSleep(){ //À TESTER
+void goToSleep(unsigned long sleepTime){ //À TESTER
   //Éteindre les sources d'alimentation
-  //TODO
+  disable12V();
+  disable5V();
+  disable3V3():
+
+  //Configuration de la source de wakeup 
+  //TODO : Convert to us
+  esp_sleep_enable_timer_wakeup(sleepTime); //time in us
 
   // Configuration des périphériques à conserver en fonction
-  //TODO
+  if(firstBoot){
+    firstBoot = false;
+    gpio_deep_sleep_hold_en();
+  }
+  gpio_hold_en(static_cast<gpio_num_t>(P_SHDN_12V));
+  gpio_hold_en(static_cast<gpio_num_t>(P_SHDN_5V));
+  gpio_hold_en(static_cast<gpio_num_t>(P_SHDN_3V3));
 
   // Mettre le esp32 en deep sleep
-  // TODO
+  esp_deep_sleep_start();
+}
+
+void wakeup(){
+  gpio_hold_dis(static_cast<gpio_num_t>(P_SHDN_12V));
+  gpio_hold_dis(static_cast<gpio_num_t>(P_SHDN_5V));
+  gpio_hold_dis(static_cast<gpio_num_t>(P_SHDN_3V3));
 }

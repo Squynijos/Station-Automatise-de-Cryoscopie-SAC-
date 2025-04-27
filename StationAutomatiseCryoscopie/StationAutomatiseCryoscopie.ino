@@ -2,8 +2,8 @@
   - Modbus - Changement adresse - tester le retry
   - GPS - à tester
   - SAT
-  - RTC
-  - Sleep
+  - RTC - à tester
+  - Sleep - à tester
   - Lecture batterie - à tester
   - Gestion Erreur
   petite puce : logique du code
@@ -39,6 +39,8 @@ TinyGPSPlus gps;
 TinyGPSCustom gpsFix(gnss, "GPGGA", 6); // Fix quality
 TinyGPSCustom gpsValidity(gnss, "GPRMC", 2); // Validity
 
+RTCZero rtc;
+
 // Modbus
 HardwareSerial SerialRS485(Serial2);
 ModbusRTUMaster modbus(SerialRS485, P_DE);
@@ -47,7 +49,9 @@ ModbusRTUMaster modbus(SerialRS485, P_DE);
 const uint8_t BAT_CUT_OFF = 11; //V
 
 //--------- VARIABLES ---------
-RTC_DATA_ATTR int bootCount = 0; // L'attribut RTC_DATA_ATTR indique que le variable est conserver en mémoire même entre les sleeps
+RTC_DATA_ATTR int bootCount  = 0; // L'attribut RTC_DATA_ATTR indique que le variable est conserver en mémoire même entre les sleeps
+RTC_DATA_ATTR bool firstBoot = true;
+unsigned long unixtime       = 0; 
 Config config;
 
 // Structure pour l'acquisition mesures
@@ -106,45 +110,51 @@ void setup() {
   //### NON DEBUG CODE ###
   data.m.vBat = readVBat();
   if(data.m.vBat < BAT_CUT_OFF){
-    goToSleep();
+    goToSleep(3600 / config.acquisitionParHeure);
   }
+  wakeup();
 
   //Power on internal devices and configurations
   initPower();
   enable3V3();
 
+  //Read config file, doit être fait en premier pour obtenir les configs
+  initSPI();
+  readJson(CONFIG_FILE, config);
+
+  //Initialise le reste des communications
   initI2C();
   initRS485();
-  initSPI();
   initUART();
-
-  //Read config file
-  //TODO
 
   //Read GPS et sync RTC
   //TODO
 
   //Get internal sensors values
-  //TODO
+  readBmeInt(data);
+  readMagAccel(data);
 
   //Get external sensors values
   enable12V();
-  //TODO : Get val and deal with errors
+  readDirVent(data);
+  readVitVent(data);
+  readBmeExt(data);
+  readLum(data);
   disable12V();
 
   //Save data as bin on SD
   //TODO
   bootCount++;
 
-  //Moyenne des données après 5 iterations
-  if(bootCount % 5 == 0){
+  //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
+  if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
     //TODO : Moyenne
     //TODO : Log SD
     //TODO : Send sat
   }
 
   //Sleep
-  goToSleep();  
+  goToSleep(3600 / config.acquisitionParHeure);  
 }
 
 //--------- LOOP DE DBG ---------
@@ -152,6 +162,7 @@ void loop() {
   //Read all values
   readVBat(data);
   readDirVent(data);
+  readVitVent(data);
   readBmeExt(data);
   readLum(data);
   readBmeInt(data);

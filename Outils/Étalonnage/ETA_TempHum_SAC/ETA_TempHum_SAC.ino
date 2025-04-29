@@ -1,29 +1,18 @@
 /*
- * Ce programme est un outil de test pour le Datalogger du projet PART-IT 12902.
- * Il permet de vérifier les fonctionnalités du Datalogger à l'aide de commandes séries
+ * Ce programme est un outil de test pour la station SAC
+ * Il permet de vérifier les fonctionnalités du PCB principale à l'aide de commandes séries
  *
- * Auteur: Liam Lebrun
- * Date de dernière modif: 14 mars. 2025 par Richard M.
+ * Auteur: Antoine Lepage
+ * Date de dernière modif: 29 avril. 2025 par Antoine L.
  *
  *
  * Sources:
  *    Scan I2C: https://learn.adafruit.com/scanning-i2c-addresses/arduino
+ *    Programme d'inspiration : ETA_Datalogger.ino
  */
 
-#define VERSION "9.9.3"
-/*
-* 0.1.0 : Version initiale
-* 0.1.1 : Correction BUG log SD
-* 0.1.2 : Ajout du facteur de correction de l'humidité
-* 0.1.3 : Remplacement facteurs de correction par 2e degré
-* 9.9.0 : Version de test pour trouver le bug d'arrêt après 10heures de fonctionnement (SD LOg et accès BME Externe désactivés)
-* 9.9.1 : Version qui réactive la communication avec le capteur BME280 externe
-* 9.9.2 : Version qui désactive la communication avec le capteur BME280 externe et qui ne sauve plus les données sur la carte microSD
-* 9.9.3 : Version qui ré-active les écritures sur la carte microSD et qui rétablie la communication avec le BME Externe dans le Stevenson. Filtre Passe-bas désactivé.
-* 9.9.4 : Version qui applique un facteur de correction en température et humidité uniquement sur le BME INT.
-* 9.9.5 : Ajoute le facteur de correction sur le capteur d'humidité du BME280 Externe.
-* 9.9.6 : Version qui ajoute la lecture du VEML et le logging des mesures de luminositées sur la SD. librairies Adafruit_VEML7700 et TinyGPS++ ajoutées
-*/
+#define VERSION "0.1.0"
+
 
 
 //---------- Includes ----------
@@ -48,7 +37,6 @@
 // Adresses
 const uint8_t ADDR_TEMP_EXT =  1;
 const uint8_t ADDR_BME =  0x77;
-const uint8_t REG_INTER = 0x02;
 
 // Filters and delays
 const unsigned long DELAY_M = 1000; // ms

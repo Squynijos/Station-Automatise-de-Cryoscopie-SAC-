@@ -1,10 +1,19 @@
+/*
+  Nom de programme : StationAutomiseCryoscopie
+  Auteurs : Liam Lebrun et Antoine Lepage
+
+  Version IDE         : 2.3.6
+  Version Board ESP32 : 2.0.17
+*/
+
+
 /*------ TODO ------
   - Modbus - Changement adresse - tester le retry
   - GPS - à tester
   - SAT
   - RTC - à tester
   - Sleep - à tester
-  - Lecture batterie - à tester
+  - Lecture batterie - à étalonner
   - Gestion Erreur
   petite puce : logique du code
   autre puce : Thingsboard
@@ -15,10 +24,10 @@
 #include "ArduinoJson.h"
 #include "Configs.h"
 #include "Definitions.h"
+#include <ESP32Time.h>
 #include <FS.h>
 #include "IridiumSBD.h"      // https://github.com/sparkfun/SparkFun_IridiumSBD_I2C_Arduino_Library (v3.0.6)
 #include "ModbusRTUMaster.h" //1.0.5
-//#include <RTCZero.h>         //1.6.0
 #include <SD.h>
 #include "Sodaq_LSM303AGR.h" //2.0.1
 #include <SPI.h>
@@ -39,7 +48,7 @@ Sodaq_LSM303AGR lsm;
 // TinyGPSCustom gpsFix(gps, "GPGGA", 6); // Fix quality
 // TinyGPSCustom gpsValidity(gps, "GPRMC", 2); // Validity
 
-//RTCZero rtc;
+ESP32Time rtc(-5*60*3600);
 
 // Modbus
 HardwareSerial SerialRS485(Serial2);
@@ -57,7 +66,7 @@ Config config;
 // Structure pour l'acquisition mesures
 struct Mesures{
   int iteration;
-  float timestamp;
+  uint32_t timestamp;
   float longitude;
   float latitude;
   float hdop;
@@ -103,6 +112,7 @@ void setup() {
 
     initI2C();
     initRS485();
+    initRTC();
     //initUART();
 
     //On skip le reste du setup
@@ -128,6 +138,7 @@ void setup() {
   // //Initialise le reste des communications
   // initI2C();
   // initRS485();
+  // initRTC();
   // //initUART();
 
   // //Read GPS et sync RTC
@@ -172,10 +183,20 @@ void loop() {
   readLum(data);
   readBmeInt(data);
   readMagAccel(data);
+  readRTC(data);
+  data.m.iteration = bootCount;
 
   //Print result
   Serial.println("-------------------------------------");
+  Serial.println("iteration:\t" + String(data.m.iteration));
+
+  Serial.println("timestamp:\t" + String(data.m.timestamp));
+  Serial.println("longitude:\t" + String(data.m.longitude));
+  Serial.println("latitude:\t"  + String(data.m.latitude));
+  Serial.println("hdop:\t\t"    + String(data.m.hdop));
+
   Serial.println("V Bat:\t\t"   + String(data.m.vBat));
+
   Serial.println("Dir Vent:\t"  + String(data.m.dirVent));
   Serial.println("Angle Vent:\t"+ String(data.m.angleVent));
   Serial.println("Vit Vent:\t"  + String(data.m.vitVent));
@@ -218,7 +239,7 @@ void loop() {
   // Serial.println("AccelY:\t\t"  + String(d.m.accelY));
   // Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
 
-  //logCSV(DATA_FILE, data);
+  logCSV(DATA_FILE, data);
 
   Serial.println("-------------------------------------");
   Serial.println();

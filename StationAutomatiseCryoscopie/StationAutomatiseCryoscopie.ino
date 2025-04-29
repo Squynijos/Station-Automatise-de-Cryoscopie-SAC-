@@ -41,12 +41,12 @@ Adafruit_BME280 bme;
 Sodaq_LSM303AGR lsm;
 
 // UART
-// HardwareSerial SerialSatGps(Serial1);
+HardwareSerial SerialSatGps(Serial1);
 // IridiumSBD modemSat(SerialSatGps);
 
-// TinyGPSPlus gps;
-// TinyGPSCustom gpsFix(gps, "GPGGA", 6); // Fix quality
-// TinyGPSCustom gpsValidity(gps, "GPRMC", 2); // Validity
+TinyGPSPlus gps;
+TinyGPSCustom gpsFix(gps, "GPGGA", 6); // Fix quality
+TinyGPSCustom gpsValidity(gps, "GPRMC", 2); // Validity
 
 ESP32Time rtc(-5*60*3600);
 
@@ -107,17 +107,17 @@ void setup() {
     //enable5V();
     enable12V();
 
-    // initSPI();
-    // readJson(CONFIG_FILE, config);
+    initSPI();
+    readJson(CONFIG_FILE, config);
 
     initI2C();
     initRS485();
     initRTC();
-    //initUART();
+    initUART();
 
     //On skip le reste du setup
-    //return;
-    Serial.println("Should skip");
+    return;
+    Serial.println("Should not print");
   }
   
   // //### NON DEBUG CODE ###
@@ -176,6 +176,9 @@ void loop() {
   //Read all values
   Serial.println("---------------- Start --------------");
   Serial.println("> Reading values...");
+  data.m.iteration = bootCount;
+
+  //Read values
   readVBat(data);
   readDirVent(data);
   //readVitVent(data);
@@ -184,10 +187,10 @@ void loop() {
   readBmeInt(data);
   readMagAccel(data);
   readRTC(data);
-  data.m.iteration = bootCount;
+  readGPS(data);
 
   //Print result
-  Serial.println("-------------------------------------");
+  Serial.println("---------------- Values -------------");
   Serial.println("iteration:\t" + String(data.m.iteration));
 
   Serial.println("timestamp:\t" + String(data.m.timestamp));
@@ -242,6 +245,7 @@ void loop() {
   logCSV(DATA_FILE, data);
 
   Serial.println("-------------------------------------");
+  Serial.println();
   Serial.println();
   delay(1000);
 }

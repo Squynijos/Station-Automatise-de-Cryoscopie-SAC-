@@ -16,9 +16,3 @@ bool readRTC(DataStruct &ds){ //À TESTER
 
   return true;
 }
-
-bool setRTC(uint32_t epoch){
-  D(Serial.println("Setting RTC"));
-  D(Serial.println("\t- Value: " + String(epoch)));
-  rtc.setTime(epoch);
-}

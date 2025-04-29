@@ -7,10 +7,38 @@ void initRS485(){ //Fonctionnelle
   modbus.setTimeout(config.mb.timeout);
 }
 
-void readVitVent(DataStruct &ds){ //Fonctionnelle
+uint16_t readVitVent(DataStruct &ds){ //Fonctionnelle
+  D(Serial.println("Reading VitVent"));
+
+  uint8_t tryCount = 0;
+  uint16_t errMB = 0;
   uint16_t reg[1] = {0};
-  modbus.readHoldingRegisters(ADDR_ANEMO, REG_VIT, reg, 1);
-  ds.m.vitVent = reg[0];
+
+  //Tentative de lecture des données
+  do{
+    D(Serial.println("\t- Loop"));
+    modbus.readHoldingRegisters(ADDR_ANEMO, REG_VIT, reg, 1);
+    errMB = modbus.getExceptionResponse(); //A RETIRER si on update la lib
+    modbus.clearExceptionResponse(); //A RETIRER si on update la lib
+    //Y a t-il une erreur?
+    if(errMB){
+      D(Serial.println("\t! Erreur modbus DirVent: " + String(errMB)));
+      tryCount++;
+      delay(config.mb.retryDelai);
+    }
+  }
+  while(errMB && tryCount < config.mb.maxRetry);
+
+  //Est-ce qu'on a réssi?
+  if(!errMB){
+    D(Serial.println("\t> Data: " + String(reg[0])));
+    D(Serial.println("\t> Erreur: " + String(errMB)));
+    ds.m.vitVent = reg[0];
+  }
+  return errMB;
+  // uint16_t reg[1] = {0};
+  // modbus.readHoldingRegisters(ADDR_ANEMO, REG_VIT, reg, 1);
+  // ds.m.vitVent = reg[0];
 }
 
 uint16_t readDirVent(DataStruct &ds){ //À TESTER, puis copier sur les autres
@@ -28,7 +56,7 @@ uint16_t readDirVent(DataStruct &ds){ //À TESTER, puis copier sur les autres
     modbus.clearExceptionResponse(); //A RETIRER si on update la lib
     //Y a t-il une erreur?
     if(errMB){
-      D(Serial.println("\t! Erreur modbus DirVent: " + String(errMB)));
+      D(Serial.println("\t! Erreur modbus: " + String(errMB)));
       tryCount++;
       delay(config.mb.retryDelai);
     }
@@ -45,18 +73,76 @@ uint16_t readDirVent(DataStruct &ds){ //À TESTER, puis copier sur les autres
   return errMB;
 }
 
-void readBmeExt(DataStruct &ds){ //Fonctionnelle
+uint16_t readBmeExt(DataStruct &ds){ //Fonctionnelle
   D(Serial.println("Reading BME280"));
 
+  uint8_t tryCount = 0;
+  uint16_t errMB = 0;
   uint16_t reg[3] = {0, 0, 0};
-  modbus.readHoldingRegisters(ADDR_BME_EXT, REG_HUM, reg, 3);
-  ds.m.humExt     = reg[0]/10.0;
-  ds.m.tempExt    = reg[1]/10.0;
-  ds.m.pressExt   = reg[2]/10.0;
+
+  //Tentative de lecture des données
+  do{
+    D(Serial.println("\t- Loop"));
+    modbus.readHoldingRegisters(ADDR_BME_EXT, REG_HUM, reg, 3);
+    errMB = modbus.getExceptionResponse(); //A RETIRER si on update la lib
+    modbus.clearExceptionResponse(); //A RETIRER si on update la lib
+    //Y a t-il une erreur?
+    if(errMB){
+      D(Serial.println("\t! Erreur modbus: " + String(errMB)));
+      tryCount++;
+      delay(config.mb.retryDelai);
+    }
+  }
+  while(errMB && tryCount < config.mb.maxRetry);
+
+  //Est-ce qu'on a réssi?
+  if(!errMB){
+    D(Serial.println("\t> Data: " + String(reg[0]) +", "+ String(reg[1]) +", "+ String(reg[2])));
+    D(Serial.println("\t> Erreur: " + String(errMB)));
+    ds.m.humExt     = reg[0]/10.0;
+    ds.m.tempExt    = reg[1]/10.0;
+    ds.m.pressExt   = reg[2]/10.0;
+  }
+  return errMB;
+  // D(Serial.println("Reading BME280"));
+
+  // uint16_t reg[3] = {0, 0, 0};
+  // modbus.readHoldingRegisters(ADDR_BME_EXT, REG_HUM, reg, 3);
+  // ds.m.humExt     = reg[0]/10.0;
+  // ds.m.tempExt    = reg[1]/10.0;
+  // ds.m.pressExt   = reg[2]/10.0;
 }
 
-void readLum(DataStruct &ds){ //Fonctionnelle
+uint16_t readLum(DataStruct &ds){ //Fonctionnelle
+  D(Serial.println("Reading Lum"));
+
+  uint8_t tryCount = 0;
+  uint16_t errMB = 0;
   uint16_t reg[1] = {0};
-  modbus.readHoldingRegisters(ADDR_LUX, REG_LUM, reg, 1);
-  ds.m.lum = reg[0];
+
+  //Tentative de lecture des données
+  do{
+    D(Serial.println("\t- Loop"));
+    modbus.readHoldingRegisters(ADDR_LUX, REG_LUM, reg, 1);
+    errMB = modbus.getExceptionResponse(); //A RETIRER si on update la lib
+    modbus.clearExceptionResponse(); //A RETIRER si on update la lib
+    //Y a t-il une erreur?
+    if(errMB){
+      D(Serial.println("\t! Erreur modbus DirVent: " + String(errMB)));
+      tryCount++;
+      delay(config.mb.retryDelai);
+    }
+  }
+  while(errMB && tryCount < config.mb.maxRetry);
+
+  //Est-ce qu'on a réssi?
+  if(!errMB){
+    D(Serial.println("\t> Data: " + String(reg[0])));
+    D(Serial.println("\t> Erreur: " + String(errMB)));
+    ds.m.lum = reg[0];
+  }
+  return errMB;
+  // uint16_t reg[1] = {0};
+  // modbus.readHoldingRegisters(ADDR_LUX, REG_LUM, reg, 1);
+  // ds.m.lum = reg[0];
 }

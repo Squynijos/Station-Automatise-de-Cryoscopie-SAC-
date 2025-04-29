@@ -18,7 +18,7 @@ struct SatConf{
 struct GpsConf{
   int baud        = 9600;
   uint8_t timeout = 120; //ms
-}
+};
 
 struct CapteurConf{ //Defaut = Aucune modif
   float offset  = 0;

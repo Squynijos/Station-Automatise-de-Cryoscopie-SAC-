@@ -17,7 +17,7 @@ void disable5V()  {digitalWrite(P_SHDN_5V, LOW);}
 void disable3V3() {digitalWrite(P_SHDN_3V3, LOW);}
 
 void readVBat(DataStruct &ds){ //À TESTER
-  voltage = analogRead(P_VBAT);
+  float voltage = analogRead(P_VBAT);
   voltage *= ((1e7 + 1e6) / 1e6); // Multiply back 1 MOhm / (10 MOhm + 1 MOhm)
   voltage *= 3.3; // Multiply by 3.3V reference voltage
   voltage /= 4096; // Convert to voltage
@@ -28,7 +28,7 @@ void goToSleep(unsigned long sleepTime){ //À TESTER
   //Éteindre les sources d'alimentation
   disable12V();
   disable5V();
-  disable3V3():
+  disable3V3();
 
   //Configuration de la source de wakeup 
   //TODO : Convert to us

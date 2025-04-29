@@ -18,7 +18,7 @@
 #include <FS.h>
 #include "IridiumSBD.h"      // https://github.com/sparkfun/SparkFun_IridiumSBD_I2C_Arduino_Library (v3.0.6)
 #include "ModbusRTUMaster.h" //1.0.5
-#include "RTCZero.h"         //1.6.0
+//#include <RTCZero.h>         //1.6.0
 #include <SD.h>
 #include "Sodaq_LSM303AGR.h" //2.0.1
 #include <SPI.h>
@@ -32,14 +32,14 @@ Adafruit_BME280 bme;
 Sodaq_LSM303AGR lsm;
 
 // UART
-HardwareSerial SerialSatGps(Serial1);
-IridiumSBD modemSat(SerialSatGnss);
+// HardwareSerial SerialSatGps(Serial1);
+// IridiumSBD modemSat(SerialSatGps);
 
-TinyGPSPlus gps;
-TinyGPSCustom gpsFix(gnss, "GPGGA", 6); // Fix quality
-TinyGPSCustom gpsValidity(gnss, "GPRMC", 2); // Validity
+// TinyGPSPlus gps;
+// TinyGPSCustom gpsFix(gps, "GPGGA", 6); // Fix quality
+// TinyGPSCustom gpsValidity(gps, "GPRMC", 2); // Validity
 
-RTCZero rtc;
+//RTCZero rtc;
 
 // Modbus
 HardwareSerial SerialRS485(Serial2);
@@ -95,74 +95,79 @@ void setup() {
     //On active tout
     initPower();
     enable3V3();
-    enable5V();
+    //enable5V();
     enable12V();
+
+    // initSPI();
+    // readJson(CONFIG_FILE, config);
 
     initI2C();
     initRS485();
-    initSPI();
-    initUART();
+    //initUART();
 
     //On skip le reste du setup
-    return;
+    //return;
+    Serial.println("Should skip");
   }
   
-  //### NON DEBUG CODE ###
-  data.m.vBat = readVBat();
-  if(data.m.vBat < BAT_CUT_OFF){
-    goToSleep(3600 / config.acquisitionParHeure);
-  }
-  wakeup();
+  // //### NON DEBUG CODE ###
+  // readVBat(data);
+  // if(data.m.vBat < BAT_CUT_OFF){
+  //   goToSleep(3600 / config.acquisitionParHeure);
+  // }
+  // wakeup();
 
-  //Power on internal devices and configurations
-  initPower();
-  enable3V3();
+  // //Power on internal devices and configurations
+  // initPower();
+  // enable3V3();
 
-  //Read config file, doit être fait en premier pour obtenir les configs
-  initSPI();
-  readJson(CONFIG_FILE, config);
+  // //Read config file, doit être fait en premier pour obtenir les configs
+  // initSPI();
+  // readJson(CONFIG_FILE, config);
 
-  //Initialise le reste des communications
-  initI2C();
-  initRS485();
-  initUART();
+  // //Initialise le reste des communications
+  // initI2C();
+  // initRS485();
+  // //initUART();
 
-  //Read GPS et sync RTC
-  //TODO
+  // //Read GPS et sync RTC
+  // //TODO
 
-  //Get internal sensors values
-  readBmeInt(data);
-  readMagAccel(data);
+  // //Get internal sensors values
+  // readBmeInt(data);
+  // readMagAccel(data);
 
-  //Get external sensors values
-  enable12V();
-  readDirVent(data);
-  readVitVent(data);
-  readBmeExt(data);
-  readLum(data);
-  disable12V();
+  // //Get external sensors values
+  // enable12V();
+  // readDirVent(data);
+  // readVitVent(data);
+  // readBmeExt(data);
+  // readLum(data);
+  // disable12V();
 
-  //Save data as bin on SD
-  //TODO
-  bootCount++;
+  // //Save data as bin on SD
+  // //TODO
+  // bootCount++;
 
-  //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
-  if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
-    //TODO : Moyenne
-    //TODO : Log SD
-    //TODO : Send sat
-  }
+  // //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
+  // if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
+  //   //TODO : Moyenne
+  //   //TODO : Log SD
+  //   //TODO : Send sat
+  // }
 
-  //Sleep
-  goToSleep(3600 / config.acquisitionParHeure);  
+  // //Sleep
+  // goToSleep(3600 / config.acquisitionParHeure);  
 }
 
 //--------- LOOP DE DBG ---------
 void loop() {
   //Read all values
+  Serial.println("---------------- Start --------------");
+  Serial.println("> Reading values...");
   readVBat(data);
   readDirVent(data);
-  readVitVent(data);
+  //readVitVent(data);
   readBmeExt(data);
   readLum(data);
   readBmeInt(data);
@@ -189,29 +194,29 @@ void loop() {
   Serial.println("AccelY:\t\t"  + String(data.m.accelY));
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
-  Serial.println();
-  createBin("/data.bin", data);
-  DataStruct d;
-  readBin("/data.bin", d);
+  // Serial.println();
+  // createBin("/data.bin", data);
+  // DataStruct d;
+  // readBin("/data.bin", d);
 
-  Serial.println("V Bat:\t\t"   + String(d.m.vBat));
-  Serial.println("Dir Vent:\t"  + String(d.m.dirVent));
-  Serial.println("Angle Vent:\t"+ String(d.m.angleVent));
-  Serial.println("Vit Vent:\t"  + String(d.m.vitVent));
-  Serial.println("Temp Ext:\t"  + String(d.m.tempExt));
-  Serial.println("Hum Ext:\t"   + String(d.m.humExt));
-  Serial.println("Press Ext:\t" + String(d.m.pressExt));
-  Serial.println("Lum:\t\t"     + String(d.m.lum));
+  // Serial.println("V Bat:\t\t"   + String(d.m.vBat));
+  // Serial.println("Dir Vent:\t"  + String(d.m.dirVent));
+  // Serial.println("Angle Vent:\t"+ String(d.m.angleVent));
+  // Serial.println("Vit Vent:\t"  + String(d.m.vitVent));
+  // Serial.println("Temp Ext:\t"  + String(d.m.tempExt));
+  // Serial.println("Hum Ext:\t"   + String(d.m.humExt));
+  // Serial.println("Press Ext:\t" + String(d.m.pressExt));
+  // Serial.println("Lum:\t\t"     + String(d.m.lum));
 
-  Serial.println("Temp Int:\t"  + String(d.m.tempInt));
-  Serial.println("Hum Int:\t"   + String(d.m.humInt));
-  Serial.println("Press Int:\t" + String(d.m.pressInt));
-  // Serial.println("MagX:\t\t"    + String(d.m.magX));
-  // Serial.println("MagY:\t\t"    + String(d.m.magY));
-  // Serial.println("MagZ:\t\t"    + String(d.m.magZ));
-  Serial.println("AccelX:\t\t"  + String(d.m.accelX));
-  Serial.println("AccelY:\t\t"  + String(d.m.accelY));
-  Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
+  // Serial.println("Temp Int:\t"  + String(d.m.tempInt));
+  // Serial.println("Hum Int:\t"   + String(d.m.humInt));
+  // Serial.println("Press Int:\t" + String(d.m.pressInt));
+  // // Serial.println("MagX:\t\t"    + String(d.m.magX));
+  // // Serial.println("MagY:\t\t"    + String(d.m.magY));
+  // // Serial.println("MagZ:\t\t"    + String(d.m.magZ));
+  // Serial.println("AccelX:\t\t"  + String(d.m.accelX));
+  // Serial.println("AccelY:\t\t"  + String(d.m.accelY));
+  // Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
 
   //logCSV(DATA_FILE, data);
 

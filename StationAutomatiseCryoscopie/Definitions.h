@@ -62,7 +62,7 @@
 #define BAUD_DEBUG 115200
 
 //---------- PATHS SD -----------
-#define HEADER "Timestamp, Longitude, Latitude, HDOP, VBat, TemperatureInt, PressionInt, HumiditeInt, AccelX, AccelY, AccelZ, TemperatureExt, PressionExt, HumiditeExt, VitesseVent, DirectionVent, AngleVent, Luminosite"
+#define HEADER "Timestamp, Longitude, Latitude, HDOP, VBat, TemperatureInt, PressionInt, HumiditeInt, AccelX, AccelY, AccelZ, TemperatureExt, PressionExt, HumiditeExt, VitesseVent, DirectionVent, AngleVent, Luminosite\n"
 #define DATA_FILE "/data.csv"
 #define CONFIG_FILE "/config.json"
 

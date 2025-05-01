@@ -20,8 +20,10 @@
 #include "Configs.h"
 #include <Decodeur.h>
 #include "Definitions.h"
+#include <FS.h>
 #include "ModbusRTUMaster.h" //1.0.5
 #include <SD.h>
+#include <SPI.h>
 #include <TinyGPS++.h>
 #include <Wire.h>
 
@@ -29,8 +31,8 @@
 //---------- Configuration ----------
 
 // Fonctionnalités
-#define DEBUG       0
-#define LOGGING     1
+#define DEBUG       1
+#define LOGGING     0
 #define FILTRE_BAS  0
 
 
@@ -45,8 +47,8 @@ static_assert(ALPHA_F >= 0 && ALPHA_F <= 1, "Valeur ALPHA_F invalide");
 
 // SD card
 String filename = "M"; // Define log file prefix here
-const char* const HEADER = "NB,Sent,TempInt,TempExt,HumInt,HumExt\r\n";
-const char* const FORMAT = "%lu,%lu,%.2f,%.2f,%.2f,%.2f\r\n";
+const char* const HEADER = "runTime,TempInt,TempExt,HumInt,HumExt\r\n";
+const char* const FORMAT = "%lu,%.2f,%.2f,%.2f,%.2f\r\n";
 
 
 
@@ -59,7 +61,7 @@ Decodeur decodeur(&Serial);
 HardwareSerial SerialRS485(Serial2);
 ModbusRTUMaster modbus(SerialRS485, P_DE);
 
-File logfile;
+
 
 // union Data {
 //   // Structure de communication
@@ -124,13 +126,11 @@ void initI2C(){ //Fonctionnelle
 
 }
 
-
 void initPower(){ //Fonctionnelle
   pinMode(P_SHDN_12V, OUTPUT);  
   pinMode(P_SHDN_5V, OUTPUT);
   pinMode(P_SHDN_3V3, OUTPUT);  
 }
-
 //Pour activer les régulateurs/commutateurs
 void enable12V()  {digitalWrite(P_SHDN_12V, HIGH);} //Fonctionnelle
 void enable5V()   {digitalWrite(P_SHDN_5V, HIGH);} //Fonctionnelle
@@ -150,6 +150,96 @@ void readBmeExt(){ //Fonctionnelle
   tempExt    = reg[1]/10.0;
 }
 
+bool initSPI(){ //Fonctionnelle
+  // Initialisation de la SD
+  D(Serial.println("Initializing SD Card"));
+  if(!SD.begin(P_CS_SD)){
+    D(Serial.println("\t! Card Mount Failed"));
+    return false;
+  }
+
+  // Verif avec type de carte
+  uint8_t cardType = SD.cardType();
+  if(cardType == CARD_NONE){
+    D(Serial.println("\t! No SD card attached"));
+    return false;
+  }
+
+  // Print le type et les détails de la carte
+  if(DEBUG){
+    Serial.print("\t- SD Card Type: ");
+    if(cardType == CARD_MMC){
+      Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+
+    // Information supplémentaire sur la carte
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("\t- SD Card Size: %lluMB\n", cardSize);
+  }
+
+  //Verif d'existance des différents fichiers, sinon création
+  if(!SD.exists(DATA_FILE)){
+    createCSV(DATA_FILE, "runTime,TempInt,TempExt,HumInt,HumExt\r\n");
+  }
+  //TODO: Directory pour les bin si existe pas
+
+  return true;
+}
+
+
+bool createCSV(const char * path, const char * header){ //Fonctionnelle
+  D(Serial.printf("Writing csv: %s\n", path));
+
+  File file = SD.open("/ETA.csv", "w", true);
+  if(!file){
+    D(Serial.println("\t! Failed to open file for writing"));
+    return false;
+  }
+
+  if(!file.print(String(header))){
+    D(Serial.println("\t! Write failed"));
+    file.close();
+    return false;
+  }
+
+  file.close();
+  return true;
+}
+
+bool logCSV(const char* path){ //Fonctionnelle
+  D(Serial.printf("Appending to file: %s\n", path));
+  
+  File file = SD.open(path, FILE_APPEND);
+  if(!file){
+    D(Serial.println("\t! Failed to open file for appending"));
+    return false;
+  }
+
+  if(!file.println(formatLog())){
+    D(Serial.println("\t! Append failed"));
+    file.close();
+    return false;
+  }
+
+  file.close();
+  return true;
+}
+
+String formatLog(){ //Fonctionnelle
+  return (
+    String(runTime) + "," +
+    String(tempInt) + "," +
+    String(tempExt) + "," +
+    String(humInt) + "," +
+    String(humExt)
+  );
+}
 //###################################################################
 
 
@@ -157,7 +247,7 @@ void readBmeExt(){ //Fonctionnelle
  * Ping the specified device
  * @param address The I2C address of the device
 */
-int getMeasures() {
+void getMeasures() {
   tempInt = bmeInt.readTemperature();
   humInt = bmeInt.readHumidity();
   readBmeExt();
@@ -165,12 +255,12 @@ int getMeasures() {
 }
 
 
-void logSD() {
-  if (LOGGING && logfile) {
-    D(Serial.printf(FORMAT, nlog, runTime, tempInt, tempExt, humInt, humExt));
-    logfile.printf(FORMAT, nlog++, runTime, tempInt, tempExt, humInt, humExt);
-  }
-}
+// void logSD() {
+//   if (LOGGING && logfile) {
+//     D(Serial.printf(FORMAT, nlog, runTime, tempInt, tempExt, humInt, humExt));
+//     logfile.printf(FORMAT, nlog++, runTime, tempInt, tempExt, humInt, humExt);
+//   }
+// }
 
 
 /**
@@ -217,38 +307,14 @@ void readCommand() {
     Serial.print("> ");
     if (comm.startsWith("A")) {
       D(Serial.printf("%s> ", HEADER));
-      Serial.printf(FORMAT, nlog, runTime, tempInt, tempExt, humInt, humExt);
+      //Serial.printf(FORMAT, nlog, runTime, tempInt, tempExt, humInt, humExt);
     } else if (comm.startsWith("T")) {
       Serial.println(pos == "EXT" ? tempExt : tempInt);
     } else if (comm.startsWith("H")) {
       Serial.println(pos == "EXT" ? humExt : humInt);
+        if(pos == "EXT"){logCSV(DATA_FILE);} 
     } else {
       Serial.print("! Argument not recognized: "); Serial.println(comm);
-    }
-  }
-
-  //----- LOG -----
-  else if (command == "LOG") {
-    if (!LOGGING) {
-      Serial.println("! Logging disabled");
-    } else if (arg == "START") {
-      if (logfile = SD.open(filename, FILE_WRITE)) {
-        reportSuccess("Logging resumed in " + filename);
-      } else {
-        reportError("Failed to open file " + filename);
-      }
-    } else if (arg == "STOP") {
-      logfile.close();
-      reportSuccess("Logging stopped");
-    } else if (arg == "WRITE") {
-      if (logfile) {
-        reportSuccess("Writing data to " + filename);
-        logSD();
-      } else {
-        reportError("Failed writing to " + filename);
-      }
-    } else {
-      Serial.print("! Argument not recognized: "); Serial.println(arg);
     }
   }
 
@@ -278,33 +344,8 @@ void setup() {
   //I2C Setup
   initI2C();
   
+  initSPI();
 
-
-#if LOGGING
-  //SD card config
-  if (!SD.begin(P_CS_SD)) {
-    reportError("Failed to init SD card");
-    filename += "0.csv";
-  }
-  else {
-    //Find next available filename
-    for (int i = 0; i <= 999; i++) {
-      String name = filename + String(i) + ".csv";
-      if (!SD.exists(name)) {
-        filename = name;
-        break;
-      }
-    }
-
-    //Create file and write header
-    if (logfile = SD.open(filename, FILE_WRITE)) {
-      reportSuccess("Writing header to " + filename);
-      logfile.print(HEADER);
-    } else {
-      reportError("Failed to create file " + filename);
-    }
-  }
-#endif
 }
 
 void loop() {

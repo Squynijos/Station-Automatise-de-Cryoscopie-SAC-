@@ -187,7 +187,6 @@ bool initSPI(){ //Fonctionnelle
   if(!SD.exists(DATA_FILE)){
     createCSV(DATA_FILE, "runTime,TempInt,TempExt,HumInt,HumExt\r\n");
   }
-  //TODO: Directory pour les bin si existe pas
 
   return true;
 }
@@ -196,7 +195,7 @@ bool initSPI(){ //Fonctionnelle
 bool createCSV(const char * path, const char * header){ //Fonctionnelle
   D(Serial.printf("Writing csv: %s\n", path));
 
-  File file = SD.open("/ETA.csv", "w", true);
+  File file = SD.open("/ETA_BME.csv", "w", true);
   if(!file){
     D(Serial.println("\t! Failed to open file for writing"));
     return false;

@@ -16,9 +16,11 @@
 
 
 //---------- Includes ----------
+#include <Decodeur.h>
 #include "Definitions.h"
 #include "ModbusRTUMaster.h" //1.0.5
 #include <SD.h>
+#include <SPI.h>
 #include <Wire.h>
 
 
@@ -32,19 +34,19 @@
 
 // Filters and delays
 const unsigned long DELAY_M = 1000; // ms
-
+bool firstMDone = false;
 // SD card
 String filename = "M"; // Define log file prefix here
-const char* const HEADER = "NB,Sent,TempInt,TempExt,HumInt,HumExt\r\n";
-const char* const FORMAT = "%lu,%lu,%.2f,%.2f,%.2f,%.2f\r\n";
+const char* const HEADER = "NB,Lux\r\n";
+const char* const FORMAT = "%lu,%.2f\r\n";
 
 
 //---------- Objects ----------
 // Modbus
 HardwareSerial SerialRS485(Serial2);
 ModbusRTUMaster modbus(SerialRS485, P_DE);
+Decodeur decodeur(&Serial);
 
-File logfile;
 
 
 //---------- Variables ----------
@@ -108,22 +110,148 @@ void readLum(){ //Fonctionnelle
   lumEXT = reg[0];
 }
 
-//###################################################################
 
-
-
-
-void logSD() {
-  if (LOGGING && logfile) {
-    D(Serial.printf(FORMAT, nlog, runTime, lumEXT));
-    logfile.printf(FORMAT, nlog++, runTime, lumEXT);
+bool initSPI(){ //Fonctionnelle
+  // Initialisation de la SD
+  D(Serial.println("Initializing SD Card"));
+  if(!SD.begin(P_CS_SD)){
+    D(Serial.println("\t! Card Mount Failed"));
+    return false;
   }
+
+  // Verif avec type de carte
+  uint8_t cardType = SD.cardType();
+  if(cardType == CARD_NONE){
+    D(Serial.println("\t! No SD card attached"));
+    return false;
+  }
+
+  // Print le type et les détails de la carte
+  if(DEBUG){
+    Serial.print("\t- SD Card Type: ");
+    if(cardType == CARD_MMC){
+      Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+
+    // Information supplémentaire sur la carte
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("\t- SD Card Size: %lluMB\n", cardSize);
+  }
+
+  //Verif d'existance des différents fichiers, sinon création
+  if(!SD.exists(DATA_FILE)){
+    createCSV(DATA_FILE, HEADER);
+  }
+
+  return true;
 }
 
 
-/**
- * Interprète et exécute les commandes provenant du port série
-*/
+bool createCSV(const char * path, const char * header){ //Fonctionnelle
+  D(Serial.printf("Writing csv: %s\n", path));
+
+  File file = SD.open("/ETA_Lux.csv", "w", true);
+  if(!file){
+    D(Serial.println("\t! Failed to open file for writing"));
+    return false;
+  }
+
+  if(!file.print(String(header))){
+    D(Serial.println("\t! Write failed"));
+    file.close();
+    return false;
+  }
+
+  file.close();
+  return true;
+}
+
+bool logCSV(const char* path){ //Fonctionnelle
+  D(Serial.printf("Appending to file: %s\n", path));
+  
+  File file = SD.open(path, FILE_APPEND);
+  if(!file){
+    D(Serial.println("\t! Failed to open file for appending"));
+    return false;
+  }
+
+  if(!file.println(formatLog())){
+    D(Serial.println("\t! Append failed"));
+    file.close();
+    return false;
+  }
+
+  file.close();
+  return true;
+}
+
+String formatLog(){ //Fonctionnelle
+  return (
+    String(nlog) + "," +
+    String(lumEXT) 
+  );
+}
+//###################################################################
+
+
+void readCommand() {
+  String message = decodeur.getMessage();
+  String command = decodeur.getCommandString();
+  String arg = decodeur.getArgString(0);
+
+  //Ack
+  Serial.print("< "); Serial.println(message);
+  command.toUpperCase();
+  arg.toUpperCase();
+
+  //----- STATUS -----
+  if (command == "STATUS") {
+    if (lastError) {
+      Serial.print("> ERROR: ");
+      Serial.println(lastError);
+      clearError();
+    } else if (firstMDone) {
+      //We have a measure
+      Serial.println("> READY");
+    } else {
+      //Still waiting on measure
+      Serial.println("> INITIALIZING");
+    }
+  }
+
+  //----- READ -----
+  else if (command == "READ") {
+    String comm, pos;
+    if (arg.indexOf('.') != -1) {
+      //split arg
+      comm = arg.substring(0, arg.indexOf('.'));
+      pos = arg.substring(arg.indexOf('.') + 1);
+    } else {
+      //Dont split
+      comm = arg;
+    }
+
+    //Check arguments
+    Serial.print("> ");
+    if (comm.startsWith("L")) {
+      Serial.println(lumEXT);
+      nlog++;
+    } else {
+      Serial.print("! Argument not recognized: "); Serial.println(comm);
+    }
+  }
+
+  //----- WRONG -----
+  else {
+    Serial.print("! Command not recognized: "); Serial.println(command);
+  }
+}
 
 
 
@@ -143,45 +271,22 @@ void setup() {
   enable12V();
   initRS485();
 
-  
+  initSPI();
 
-
-#if LOGGING
-  //SD card config
-  if (!SD.begin(P_CS_SD)) {
-    reportError("Failed to init SD card");
-    filename += "0.csv";
-  }
-  else {
-    //Find next available filename
-    for (int i = 0; i <= 999; i++) {
-      String name = filename + String(i) + ".csv";
-      if (!SD.exists(name)) {
-        filename = name;
-        break;
-      }
-    }
-
-    //Create file and write header
-    if (logfile = SD.open(filename, FILE_WRITE)) {
-      reportSuccess("Writing header to " + filename);
-      logfile.print(HEADER);
-    } else {
-      reportError("Failed to create file " + filename);
-    }
-  }
-#endif
 }
 
 void loop() {
-
+  decodeur.refresh();
   //Read measures
   unsigned long elapsed = millis() - timer;
   if (elapsed >= DELAY_M) {
     runTime += elapsed / 1000; // not very accurate but good enough
     timer = millis();
     readLum();
-    logSD();
+  }
+
+  if (decodeur.isAvailable()) {
+    readCommand();
   }
 
 }

@@ -17,10 +17,14 @@
   - Gestion Erreur
   petite puce : logique du code
   autre puce : Thingsboard
+  puce cool: faire fonctionner si la carte sd n'est pas mount
+  plus de puce: envoyer err par sat
+  - Conserver dernière longitude/latitude pour avoir un fallback
 */
 
 //--------- INCLUDES ---------
 #include "Adafruit_BME280.h" //2.2.4
+#include "Adafruit_GPS.h"    //1.7.5
 #include "ArduinoJson.h"
 #include "Configs.h"
 #include "Definitions.h"
@@ -42,11 +46,8 @@ Sodaq_LSM303AGR lsm;
 
 // UART
 HardwareSerial SerialSatGps(Serial1);
-// IridiumSBD modemSat(SerialSatGps);
-
-TinyGPSPlus gps;
-TinyGPSCustom gpsFix(gps, "GPGGA", 6); // Fix quality
-TinyGPSCustom gpsValidity(gps, "GPRMC", 2); // Validity
+IridiumSBD modemSat(SerialSatGps, P_SAT);
+Adafruit_GPS gps(&SerialSatGps);
 
 ESP32Time rtc(-5*60*3600);
 
@@ -62,6 +63,37 @@ RTC_DATA_ATTR int bootCount  = 0; // L'attribut RTC_DATA_ATTR indique que le var
 RTC_DATA_ATTR bool firstBoot = true;
 unsigned long unixtime       = 0; 
 Config config;
+
+// Union to store Iridium Short Burst Data (SBD) Mobile Originated (MO) messages
+// Même que Glacier SMA pour compatibilité avec le TB
+typedef union
+{
+  struct
+  {
+    uint32_t  unixtime;           // UNIX Epoch time                (4 bytes)
+    int16_t   temperatureInt;     // Internal temperature (°C)      (2 bytes)   * 100
+    uint16_t  humidityInt;        // Internal humidity (%)          (2 bytes)   * 100
+    uint16_t  pressureExt;        // External pressure (hPa)        (2 bytes)   - 400 * 100
+    int16_t   temperatureExt;     // External temperature (°C)      (2 bytes)   * 100
+    uint16_t  humidityExt;        // External humidity (%)          (2 bytes)   * 100
+    int16_t   pitch;              // Pitch (°)                      (2 bytes)   * 100
+    int16_t   roll;               // Roll (°)                       (2 bytes)   * 100
+    uint32_t  solar;              // Solar illuminance (lx)         (4 bytes)   * 10000
+    uint16_t  windSpeed;          // Mean wind speed (m/s)          (2 bytes)   * 100
+    uint16_t  windDirection;      // Mean wind direction (°)        (2 bytes)	  * 10
+    uint16_t  windGustSpeed;      // Wind gust speed (m/s)          (2 bytes)   * 100
+    uint16_t  windGustDirection;  // Wind gust direction (°)        (2 bytes)	  * 10
+    int32_t   latitude;           // Latitude (DD)                  (4 bytes)   * 1000000
+    int32_t   longitude;          // Longitude (DD)                 (4 bytes)   * 1000000
+    uint8_t   satellites;         // # of satellites                (1 byte)
+    uint16_t  hauteurNeige;       // Hauteur de neige (mm)          (2 bytes)   * 1
+    uint16_t  voltage;            // Battery voltage (V)            (2 bytes)   * 100
+    uint16_t  transmitDuration;   // Previous transmission duration (2 bytes)
+    uint8_t   transmitStatus;     // Iridium return code            (1 byte)
+    uint16_t  iterationCounter;   // Message counter                (2 bytes)
+  } __attribute__((packed));                              // Total: (48 bytes)
+  uint8_t bytes[48];
+} msgSat;
 
 // Structure pour l'acquisition mesures
 struct Mesures{
@@ -120,73 +152,73 @@ void setup() {
     Serial.println("Should not print");
   }
   
-  // //### NON DEBUG CODE ###
-  // readVBat(data);
-  // if(data.m.vBat < BAT_CUT_OFF){
-  //   goToSleep(3600 / config.acquisitionParHeure);
-  // }
-  // wakeup();
+  //### NON DEBUG CODE ###
+  readVBat(data);
+  if(data.m.vBat < BAT_CUT_OFF){
+    goToSleep(3600 / config.acquisitionParHeure);
+  }
+  wakeup();
 
-  // //Power on internal devices and configurations
-  // initPower();
-  // enable3V3();
+  //Power on internal devices and configurations
+  initPower();
+  enable3V3();
 
-  // //Read config file, doit être fait en premier pour obtenir les configs
-  // initSPI();
-  // readJson(CONFIG_FILE, config);
+  //Read config file, doit être fait en premier pour obtenir les configs
+  initSPI();
+  readJson(CONFIG_FILE, config);
 
-  // //Initialise le reste des communications
-  // initI2C();
-  // initRS485();
-  // initRTC();
-  // //initUART();
+  //Initialise le reste des communications
+  initI2C();
+  initRS485();
+  initRTC();
+  initUART();
 
-  // //Read GPS et sync RTC
-  // //TODO
+  //Get internal sensors values
+  readBmeInt(data);
+  readMagAccel(data);
 
-  // //Get internal sensors values
-  // readBmeInt(data);
-  // readMagAccel(data);
+  //Get external sensors values
+  enable12V();
+  readDirVent(data);
+  readVitVent(data);
+  readBmeExt(data);
+  readLum(data);
+  disable12V();
 
-  // //Get external sensors values
-  // enable12V();
-  // readDirVent(data);
-  // readVitVent(data);
-  // readBmeExt(data);
-  // readLum(data);
-  // disable12V();
+  //Read GPS et sync RTC
+  readGPS(data);
 
-  // //Save data as bin on SD
-  // //TODO
-  // bootCount++;
+  //Save data as bin on SD
+  //TODO
+  bootCount++;
 
-  // //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
-  // if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
-  //   //TODO : Moyenne
-  //   //TODO : Log SD
-  //   //TODO : Send sat
-  // }
+  //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
+  if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
+    //TODO : Moyenne
+    //TODO : Log SD
+    //TODO : Send sat
+  }
 
-  // //Sleep
-  // goToSleep(3600 / config.acquisitionParHeure);  
+  //Sleep
+  goToSleep(3600 / config.acquisitionParHeure);  
 }
 
 //--------- LOOP DE DBG ---------
 void loop() {
   //Read all values
-  Serial.println("---------------- Start --------------");
-  Serial.println("> Reading values...");
+  //Serial.println("---------------- Start --------------");
+  //Serial.println("> Reading values...");
   data.m.iteration = bootCount;
 
   //Read values
-  readVBat(data);
-  readDirVent(data);
-  //readVitVent(data);
-  readBmeExt(data);
-  readLum(data);
-  readBmeInt(data);
-  readMagAccel(data);
-  readRTC(data);
+  // readVBat(data);
+  // readDirVent(data);
+  // //readVitVent(data);
+  // readBmeExt(data);
+  // readLum(data);
+  // readBmeInt(data);
+  // readMagAccel(data);
+  // readRTC(data);
   readGPS(data);
 
   //Print result
@@ -247,5 +279,5 @@ void loop() {
   Serial.println("-------------------------------------");
   Serial.println();
   Serial.println();
-  delay(1000);
+  delay(5000);
 }

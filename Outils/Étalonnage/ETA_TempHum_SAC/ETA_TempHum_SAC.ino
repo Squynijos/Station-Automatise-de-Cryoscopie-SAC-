@@ -360,7 +360,7 @@ void loop() {
     //   humExt = HExt;
     // #endif
 
-    // firstMDone = true;
+    firstMDone = true;
     //digitalWrite(PIN_LED_GREEN, !digitalRead(PIN_LED_GREEN));
   }
 

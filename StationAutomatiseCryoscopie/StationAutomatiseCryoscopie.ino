@@ -196,7 +196,7 @@ void setup() {
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
     //TODO : Moyenne
     //TODO : Log SD
-    //TODO : Send sat
+    sendSat(data);
   }
 
   //Sleep

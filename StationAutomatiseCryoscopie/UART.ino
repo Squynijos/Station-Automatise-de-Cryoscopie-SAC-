@@ -19,7 +19,7 @@ void initUART(){ //À TESTER
   modemSat.adjustStartupTimeout(config.sat.timeout / 2);           // Timeout for Iridium startup (default = 240 s)
 }
 
-bool readGPS(DataStruct &ds){ //À TESTER
+bool readGPS(DataStruct &ds){ //Fonctionnel
   D(Serial.println("Communication avec gps"));
 
   //Active ls switch sur le bon appareil
@@ -135,9 +135,35 @@ bool readGPS(DataStruct &ds){ //À TESTER
 
 
 bool sendSAT(DataStruct &ds){ //À TESTER
+  bool retVal = false;
+  SerialSatGps.end();
+  
   //Active ls switch sur le bon appareil
   digitalWrite(P_S0, LOW);
   digitalWrite(P_S1, HIGH);
+
+  //Put data in struct
+  msgSat.unixtime            = ds.timestamp; //uint32_t  
+  msgSat.temperatureInt      = ds.tempInt;   //int16_t   
+  msgSat.humidityInt         = ds.humInt;    //uint16_t  
+  msgSat.pressureExt         = ds.pressExt;  //uint16_t  
+  msgSat.temperatureExt      = ds.tempExt;   //int16_t   
+  msgSat.humidityExt         = ds.humExt;    //uint16_t  
+  msgSat.pitch               = ds.accelX;    //int16_t   à confirmer l'axe
+  msgSat.roll                = ds.accelY;    //int16_t   à confirmer l'axe
+  msgSat.solar               = ds.lum;       //uint32_t  
+  msgSat.windSpeed           = ds.vitVent;   //uint16_t  
+  msgSat.windDirection       = ds.dirVent;   //uint16_t  
+  msgSat.windGustSpeed       = ds.//uint16_t  EUX C'EST QUOI?
+  msgSat.windGustDirection   = ds.//uint16_t  EUX C'EST QUOI?
+  msgSat.latitude            = ds.latitude;  //int32_t   
+  msgSat.longitude           = ds.longitude; //int32_t   
+  msgSat.satellites          = ds.//uint8_t   
+  msgSat.hauteurNeige        = 0;            //uint16_t  
+  msgSat.voltage             = ds.vBat;      //uint16_t  
+  msgSat.transmitDuration    = ds.//uint16_t  EUX C'EST QUOI?
+  msgSat.transmitStatus      = ds.//uint8_t   EUX C'EST QUOI?
+  msgSat.iterationCounter    = ds.iteration; //uint16_t  
 
   //Activate power on sat module
   modem.power(true);
@@ -146,7 +172,7 @@ bool sendSAT(DataStruct &ds){ //À TESTER
   SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_RX_SW, P_TX_SW);
 
   //Initialisation
-  D(Serial.println("Starting le modem Iridium"));
+  D(Serial.println("Starting modem Iridium..."));
   int retCode = modemSat.begin();
 
   if(retCode != ISBD_SUCCESS){
@@ -156,44 +182,47 @@ bool sendSAT(DataStruct &ds){ //À TESTER
     else{
       D(Serial.println("\t! Failed to initialize modem, error: " + String(retCode)));
     } 
-    disable5V();
-    return false;
   }
+  else{
+    // This returns a number between 0 and 5.
+    // 2 or better is preferred.
+    int signalQuality = -1;
+    retCode = modem.getSignalQuality(signalQuality);
+    if (retCode != ISBD_SUCCESS)
+    {
+      D(Serial.print("SignalQuality failed: error "));
+      D(Serial.println(retCode));
+    }
+    else{
+      // Send the message
+      D(Serial.print("Trying to send the message.  This might take several minutes.\r\n"));
+      err = modem.sendSBDBinary(msgSat, sizeof(msgSat));
+      if (err != ISBD_SUCCESS)
+      {
+        D(Serial.print("sendSBDBinary failed: error "));
+        D(Serial.println(err));
+        if (err == ISBD_SENDRECEIVE_TIMEOUT)
+          Serial.println("Try again with a better view of the sky.");
+      }
+      else
+      {
+        D(Serial.println("Hey, it worked!"));
+        retVal = true;
 
-  // This returns a number between 0 and 5.
-  // 2 or better is preferred.
-  int signalQuality = -1;
-  retCode = modem.getSignalQuality(signalQuality);
-  if (retCode != ISBD_SUCCESS)
-  {
-    Serial.print("SignalQuality failed: error ");
-    Serial.println(retCode);
-    disable5V();
-    return false;
-  }
-
-  //Writing Values
-  //TODO
-
-  // Send the message
-  Serial.print("Trying to send the message.  This might take several minutes.\r\n");
-  err = modem.sendSBDBinary(msgSat, sizeof(msgSat));
-  if (err != ISBD_SUCCESS)
-  {
-    D(Serial.print("sendSBDBinary failed: error "));
-    Serial.println(err);
-    if (err == ISBD_SENDRECEIVE_TIMEOUT)
-      Serial.println("Try again with a better view of the sky.");
-  }
-  else
-  {
-    Serial.println("Hey, it worked!");
+        // Clear the Mobile Originated message buffer
+        D(Serial.println("Clearing the MO buffer."));
+        err = modem.clearBuffers(ISBD_CLEAR_MO); // Clear MO buffer
+        if (err != ISBD_SUCCESS)
+        {
+          D(Serial.print("clearBuffers failed: error "));
+          D(Serial.println(err));
+        }
+      }
+    }
   }
 
   //Putting modem to sleep
   modem.power(false);
-
-  //Closing UART Port
-  //SerialSatGps.end();
-  return true;
+  disable5V();
+  return retVal;
 }

@@ -57,6 +57,7 @@
 
 //---------- Flags --------------
 #define DEBUG true
+#define SLEEP_EN false
 
 //---------- Configs ------------
 #define BAUD_DEBUG 115200

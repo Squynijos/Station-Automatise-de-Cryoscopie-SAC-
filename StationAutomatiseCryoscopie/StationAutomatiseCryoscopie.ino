@@ -9,10 +9,7 @@
 
 /*------ TODO ------
   - Modbus - Changement adresse - tester le retry
-  - GPS - à tester
   - SAT
-  - RTC - à tester
-  - Sleep - à tester
   - Lecture batterie - à étalonner
   - Gestion Erreur
   petite puce : logique du code
@@ -20,6 +17,14 @@
   puce cool: faire fonctionner si la carte sd n'est pas mount
   plus de puce: envoyer err par sat
   - Conserver dernière longitude/latitude pour avoir un fallback
+*/
+
+/*
+  1. Verifier le passage du UART sur port SAT
+  2. Tester le begin du modem
+  3. Test transmission bidon
+  4. Trouver le TB
+  5. Vérife de récupération
 */
 
 //--------- INCLUDES ---------
@@ -93,7 +98,7 @@ typedef union
     uint16_t  iterationCounter;   // Message counter                (2 bytes)
   } __attribute__((packed));                              // Total: (48 bytes)
   uint8_t bytes[48];
-} msgSat;
+} MSG_SAT;
 
 // Structure pour l'acquisition mesures
 struct Mesures{
@@ -136,16 +141,27 @@ void setup() {
     //On active tout
     initPower();
     enable3V3();
-    //enable5V();
+    enable5V();
     enable12V();
 
     initSPI();
-    readJson(CONFIG_FILE, config);
 
     initI2C();
     initRS485();
     initRTC();
     initUART();
+
+
+    // SerialSatGps.end();
+    // delay(300);
+    // //Active le switch sur le bon appareil
+    // digitalWrite(P_SAT, HIGH);
+    // digitalWrite(P_S0, HIGH);
+    // digitalWrite(P_S1, LOW);
+    // SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_TX_SW, P_RX_SW);
+
+    sendSAT(data);
+    // SerialSatGps.end();
 
     //On skip le reste du setup
     return;
@@ -163,9 +179,8 @@ void setup() {
   initPower();
   enable3V3();
 
-  //Read config file, doit être fait en premier pour obtenir les configs
+  //Init SPI et Read config file, doit être fait en premier pour obtenir les configs
   initSPI();
-  readJson(CONFIG_FILE, config);
 
   //Initialise le reste des communications
   initI2C();
@@ -196,7 +211,7 @@ void setup() {
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
     //TODO : Moyenne
     //TODO : Log SD
-    sendSat(data);
+    sendSAT(data);
   }
 
   //Sleep
@@ -205,21 +220,42 @@ void setup() {
 
 //--------- LOOP DE DBG ---------
 void loop() {
+ 
+
+  // while(SerialSatGps.available()){
+  //   Serial.print(SerialSatGps.read());
+  // }
+  // Serial.print(".");
+  // delay(500);
+
+  //SerialSatGps.print("AT+CGSN\r");
+  // SerialSatGps.flush();
+
+  
+
+
+
+  return;
+
+  if(SLEEP_EN){
+    wakeup();
+  }
+
   //Read all values
-  //Serial.println("---------------- Start --------------");
-  //Serial.println("> Reading values...");
+  Serial.println("---------------- Start --------------");
+  Serial.println("> Reading values...");
   data.m.iteration = bootCount;
 
   //Read values
-  // readVBat(data);
-  // readDirVent(data);
-  // //readVitVent(data);
-  // readBmeExt(data);
-  // readLum(data);
-  // readBmeInt(data);
-  // readMagAccel(data);
-  // readRTC(data);
-  readGPS(data);
+  readVBat(data);
+  readDirVent(data);
+  //readVitVent(data);
+  readBmeExt(data);
+  readLum(data);
+  readBmeInt(data);
+  readMagAccel(data);
+  //readGPS(data);
+  readRTC(data);
 
   //Print result
   Serial.println("---------------- Values -------------");
@@ -250,34 +286,17 @@ void loop() {
   Serial.println("AccelY:\t\t"  + String(data.m.accelY));
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
-  // Serial.println();
-  // createBin("/data.bin", data);
-  // DataStruct d;
-  // readBin("/data.bin", d);
-
-  // Serial.println("V Bat:\t\t"   + String(d.m.vBat));
-  // Serial.println("Dir Vent:\t"  + String(d.m.dirVent));
-  // Serial.println("Angle Vent:\t"+ String(d.m.angleVent));
-  // Serial.println("Vit Vent:\t"  + String(d.m.vitVent));
-  // Serial.println("Temp Ext:\t"  + String(d.m.tempExt));
-  // Serial.println("Hum Ext:\t"   + String(d.m.humExt));
-  // Serial.println("Press Ext:\t" + String(d.m.pressExt));
-  // Serial.println("Lum:\t\t"     + String(d.m.lum));
-
-  // Serial.println("Temp Int:\t"  + String(d.m.tempInt));
-  // Serial.println("Hum Int:\t"   + String(d.m.humInt));
-  // Serial.println("Press Int:\t" + String(d.m.pressInt));
-  // // Serial.println("MagX:\t\t"    + String(d.m.magX));
-  // // Serial.println("MagY:\t\t"    + String(d.m.magY));
-  // // Serial.println("MagZ:\t\t"    + String(d.m.magZ));
-  // Serial.println("AccelX:\t\t"  + String(d.m.accelX));
-  // Serial.println("AccelY:\t\t"  + String(d.m.accelY));
-  // Serial.println("AccelZ:\t\t"  + String(d.m.accelZ));
-
   logCSV(DATA_FILE, data);
 
   Serial.println("-------------------------------------");
   Serial.println();
   Serial.println();
+
+  if(SLEEP_EN){
+    SPI.end();
+    disable3V3();
+    disable12V();
+    goToSleep(60);
+  }
   delay(5000);
 }

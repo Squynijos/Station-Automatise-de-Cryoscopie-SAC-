@@ -50,6 +50,10 @@ bool initSPI(){ //Fonctionnelle
   return true;
 }
 
+bool deinitSPI(){
+  SD.end();
+  return true;
+}
 // void listDir(const char* dirname, uint8_t levels){
 //   Serial.printf("Listing directory: %s\n", dirname);
 
@@ -165,7 +169,7 @@ bool createJson(const char* path, Config &cfg){ //Fonctionnelle
 }
 
 bool readJson(const char* path, Config &cfg){ //À TESTER
-  D(Serial.printf("Writing json: %s\n", path));
+  D(Serial.printf("Reading json: %s\n", path));
 
   // Open file for reading
   File file = SD.open(path);

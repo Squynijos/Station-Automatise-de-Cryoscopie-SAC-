@@ -32,7 +32,7 @@ void goToSleep(unsigned long sleepTime){ //À TESTER
 
   //Configuration de la source de wakeup 
   //TODO : Convert to us
-  esp_sleep_enable_timer_wakeup(sleepTime); //time in us
+  esp_sleep_enable_timer_wakeup(sleepTime * 1000000); //time in us
 
   // Configuration des périphériques à conserver en fonction
   if(firstBoot){

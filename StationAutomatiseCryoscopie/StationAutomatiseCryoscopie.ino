@@ -230,9 +230,19 @@ void loop() {
 
   //SerialSatGps.print("AT+CGSN\r");
   // SerialSatGps.flush();
+  readVBat(data);
+  readDirVent(data);
+  readVitVent(data);
+  readBmeExt(data);
+  readLum(data);
+  readBmeInt(data);
+  readMagAccel(data);
+  readGPS(data);
+  readRTC(data);
 
-  
 
+  sendSAT(data);
+  delay(20000);
 
 
   return;

@@ -181,7 +181,7 @@ bool sendSAT(DataStruct &ds){ //À TESTER
   SerialSatGps.print("AT/r");
   SerialSatGps.flush();
    // int i = 0;
-   int retCode;
+   uint8_t retCode;
   while(SerialSatGps.available()){
     retCode = SerialSatGps.read();
     //Serial.print(SerialSatGps.read());

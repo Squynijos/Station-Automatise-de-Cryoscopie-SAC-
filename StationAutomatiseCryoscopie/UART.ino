@@ -20,7 +20,7 @@ void initUART(){ //À TESTER
   D(Serial.println("Configurating Modem"));
   modemSat.setPowerProfile(IridiumSBD::DEFAULT_POWER_PROFILE);     // Assume battery power (USB power: IridiumSBD::USB_POWER_PROFILE)
   modemSat.adjustSendReceiveTimeout(config.sat.timeout);           // Timeout for Iridium send/receive commands (default = 300 s)
-  modemSat.adjustStartupTimeout(config.sat.timeout / 2);           // Timeout for Iridium startup (default = 240 s)
+  modemSat.adjustATTimeout(config.sat.timeout / 8);           // Timeout for Iridium startup (default = 240 s)
 }
 
 bool readGPS(DataStruct &ds){ //Fonctionnel
@@ -174,19 +174,20 @@ bool sendSAT(DataStruct &ds){ //À TESTER
 
   //Assigne le bon Baudrate
   SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_TX_SW, P_RX_SW);
+  delay(100);
 
   //Initialisation ou wakeup du sat
   D(Serial.println("Starting modem Iridium..."));
-  digitalWrite(P_SAT, HIGH);
-  SerialSatGps.print("AT/r");
-  SerialSatGps.flush();
-   // int i = 0;
-   uint8_t retCode;
-  while(SerialSatGps.available()){
-    retCode = SerialSatGps.read();
-    //Serial.print(SerialSatGps.read());
-  }
-  //int retCode = modemSat.begin();
+  // digitalWrite(P_SAT, HIGH);
+  // SerialSatGps.print("AT/r");
+  // SerialSatGps.flush();
+  // int i = 0;
+  // uint8_t retCode = ISBD_CANCELLED;
+  // while(SerialSatGps.available()){
+  //   retCode = SerialSatGps.read();
+  //   Serial.println(retCode);
+  // }
+  int retCode = modemSat.begin();
 
   //Verify the presence of Modem
   if(retCode != ISBD_SUCCESS){
@@ -205,7 +206,9 @@ bool sendSAT(DataStruct &ds){ //À TESTER
     if (retCode != ISBD_SUCCESS)
     {
       D(Serial.print("SignalQuality failed: error "));
-      D(Serial.println(retCode));
+      D(Serial.print(retCode));
+      D(Serial.print(", Quality: "));
+      D(Serial.println(signalQuality));
     }
     else{
       // Send the message
@@ -225,7 +228,7 @@ bool sendSAT(DataStruct &ds){ //À TESTER
 
         // Clear the Mobile Originated message buffer
         D(Serial.println("Clearing the MO buffer."));
-        retCode = modemSat.clearBuffers(ISBD_CLEAR_MO); // Clear MO buffer
+        //retCode = modemSat.clearBuffers(ISBD_CLEAR_MO); // Clear MO buffer
         if (retCode != ISBD_SUCCESS)
         {
           D(Serial.print("clearBuffers failed: error "));

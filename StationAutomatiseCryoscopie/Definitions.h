@@ -39,7 +39,7 @@
 
 //---------- Adresses -----------
 #define ADDR_BME_INT 0x76
-#define ADDR_ANEMO 2
+#define ADDR_ANEMO 3
 #define ADDR_GIROU 2
 #define ADDR_BME_EXT 1
 #define ADDR_LUX 5
@@ -57,6 +57,7 @@
 
 //---------- Flags --------------
 #define DEBUG true
+#define DEBUG_SAT false
 #define SLEEP_EN false
 
 //---------- Configs ------------

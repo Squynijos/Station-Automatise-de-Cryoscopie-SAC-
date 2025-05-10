@@ -160,7 +160,7 @@ void setup() {
     // digitalWrite(P_S1, LOW);
     // SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_TX_SW, P_RX_SW);
 
-    sendSAT(data);
+    // sendSAT(data);
     // SerialSatGps.end();
 
     //On skip le reste du setup
@@ -220,33 +220,6 @@ void setup() {
 
 //--------- LOOP DE DBG ---------
 void loop() {
- 
-
-  // while(SerialSatGps.available()){
-  //   Serial.print(SerialSatGps.read());
-  // }
-  // Serial.print(".");
-  // delay(500);
-
-  //SerialSatGps.print("AT+CGSN\r");
-  // SerialSatGps.flush();
-  readVBat(data);
-  readDirVent(data);
-  readVitVent(data);
-  readBmeExt(data);
-  readLum(data);
-  readBmeInt(data);
-  readMagAccel(data);
-  readGPS(data);
-  readRTC(data);
-
-
-  sendSAT(data);
-  delay(20000);
-
-
-  return;
-
   if(SLEEP_EN){
     wakeup();
   }
@@ -259,12 +232,12 @@ void loop() {
   //Read values
   readVBat(data);
   readDirVent(data);
-  //readVitVent(data);
+  readVitVent(data);
   readBmeExt(data);
   readLum(data);
   readBmeInt(data);
   readMagAccel(data);
-  //readGPS(data);
+  readGPS(data);
   readRTC(data);
 
   //Print result
@@ -297,7 +270,10 @@ void loop() {
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
   logCSV(DATA_FILE, data);
-
+  if(DEBUG_SAT){
+    sendSAT(data);
+  }
+  
   Serial.println("-------------------------------------");
   Serial.println();
   Serial.println();
@@ -308,5 +284,5 @@ void loop() {
     disable12V();
     goToSleep(60);
   }
-  delay(5000);
+  delay(20000);
 }

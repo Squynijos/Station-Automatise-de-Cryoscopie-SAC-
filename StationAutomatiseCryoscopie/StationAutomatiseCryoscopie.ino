@@ -173,6 +173,7 @@ void setup() {
   //### NON DEBUG CODE ###
   readVBat(data);
   if(data.m.vBat < BAT_CUT_OFF){
+    bootCount++;
     goToSleep(3600 / config.acquisitionParHeure);
   }
   wakeup();
@@ -207,16 +208,61 @@ void setup() {
 
   //Save data as bin on SD
   //TODO
-  createBin("/"+ String(bootCount)+".bin", data);
+  int envoie = bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure);
+  createBin('/' + String(envoie).c_str() +'.bin', data);
 
   //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
-    for(byte i = 0; i<bootCount; i++){
-      readBin("/" + String(i)+ ".bin", bin_Tempo);
+    int moyenne = 0;
+    int nbFile = 0;
+    while(!readBin('/' + String(nbFile).c_str() + '.bin', data)){
+      nbFile++;
     }
+
+    for(byte i = nbFile+1; i < config.acquisitionParHeure; i++){
+      if (readBin('/' + String(i).c_str()+ '.bin', bin_Tempo)){
+
+      data.m.tempInt = data.m.tempInt + bin_Tempo.m.tempInt;
+      data.m.tempExt = data.m.tempExt + bin_Tempo.m.tempExt;
+
+      data.m.humInt = data.m.humInt + bin_Tempo.m.humInt;
+      data.m.humExt = data.m.humExt + bin_Tempo.m.humExt;
+
+      data.m.pressExt = data.m.pressExt + bin_Tempo.m.pressExt;
+
+      data.m.lum = data.m.lum + bin_Tempo.m.lum;
+
+      data.m.vitVent = data.m.vitVent + bin_Tempo.m.vitVent;
+      data.m.dirVent = data.m.dirVent + bin_Tempo.m.dirVent;
+      moyenne++;
+      }
+      else{
+        moyenne--;
+      }
+
+
+      // data.m.vBat = data.m.vBat + bin_Tempo.m.vBat;
+    }
+
+    //###-MOYENNE-###
+    data.m.tempInt = data.m.tempInt /moyenne;
+    data.m.tempExt = data.m.tempExt /moyenne;
+
+    data.m.humInt = data.m.humInt /moyenne;
+    data.m.humExt = data.m.humExt /moyenne;
+
+    data.m.pressExt = data.m.pressExt /moyenne;
+
+    data.m.lum = data.m.lum /moyenne;
+
+    data.m.vitVent = data.m.vitVent /moyenne;
+    data.m.dirVent = data.m.dirVent /moyenne;
+
+    //data.m.vBat = data.m.vBat /(bootcount+1);
     //TODO : Moyenne
     logCSV(DATA_FILE, data); //TODO: Send data moyenné
     sendSAT(data);
+
   }
 
   bootCount++;

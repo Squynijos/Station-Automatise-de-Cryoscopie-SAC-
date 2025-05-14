@@ -54,6 +54,7 @@ bool deinitSPI(){
   SD.end();
   return true;
 }
+
 // void listDir(const char* dirname, uint8_t levels){
 //   Serial.printf("Listing directory: %s\n", dirname);
 

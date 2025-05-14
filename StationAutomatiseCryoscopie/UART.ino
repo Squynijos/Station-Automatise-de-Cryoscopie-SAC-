@@ -150,8 +150,8 @@ bool sendSAT(DataStruct &ds){ //À TESTER
 
   //Put data in struct
   MSG_SAT msgSat;
-  msgSat.unixtime            = 9999999;//ds.m.timestamp; //uint32_t  
-  msgSat.temperatureInt      = 99;//ds.m.tempInt;   //int16_t   
+  msgSat.unixtime            = ds.m.timestamp; //uint32_t  
+  msgSat.temperatureInt      = ds.m.tempInt;   //int16_t   
   msgSat.humidityInt         = ds.m.humInt;    //uint16_t  
   msgSat.pressureExt         = ds.m.pressExt;  //uint16_t  
   msgSat.temperatureExt      = ds.m.tempExt;   //int16_t   

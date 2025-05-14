@@ -210,7 +210,7 @@ void setup() {
   //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
     //TODO : Moyenne
-    //TODO : Log SD
+    logCSV(DATA_FILE, data); //TODO: Send data moyenné
     sendSAT(data);
   }
 

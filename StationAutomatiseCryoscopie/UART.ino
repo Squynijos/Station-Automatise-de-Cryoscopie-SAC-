@@ -151,10 +151,10 @@ bool sendSAT(DataStruct &ds){ //À TESTER
   //Put data in struct
   MSG_SAT msgSat;
   msgSat.unixtime            = ds.m.timestamp; //uint32_t  
-  msgSat.temperatureInt      = ds.m.tempInt;   //int16_t   
-  msgSat.humidityInt         = ds.m.humInt;    //uint16_t  
-  msgSat.pressureExt         = ds.m.pressExt;  //uint16_t  
-  msgSat.temperatureExt      = ds.m.tempExt;   //int16_t   
+  msgSat.temperatureInt      = ds.m.tempInt * 100;   //int16_t   
+  msgSat.humidityInt         = ds.m.humInt * 100;    //uint16_t  
+  msgSat.pressureExt         = ds.m.pressExt - 400 * 100;  //uint16_t  
+  msgSat.temperatureExt      = ds.m.tempExt * 100;   //int16_t   
   msgSat.humidityExt         = ds.m.humExt;    //uint16_t  
   msgSat.pitch               = ds.m.accelX;    //int16_t   à confirmer l'axe
   msgSat.roll                = ds.m.accelY;    //int16_t   à confirmer l'axe

@@ -56,7 +56,8 @@
 #define REG_LUM   1
 
 //---------- Flags --------------
-#define DEBUG true
+#define DEBUG false
+#define DEBUG_SETUP true
 #define DEBUG_SAT false
 #define SLEEP_EN false
 
@@ -69,9 +70,11 @@
 #define CONFIG_FILE "/config.json"
 
 //---------- MACROS -------------
-#if DEBUG
+#if DEBUG || DEBUG_SETUP
   #define D(...) (__VA_ARGS__)
 #else
   #define D(...) (void(0))
 #endif
+
+
 

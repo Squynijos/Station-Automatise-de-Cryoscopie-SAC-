@@ -132,6 +132,8 @@ union DataStruct{
 };
 DataStruct data;
 
+DataStruct bin_Tempo;
+
 //--------- MAIN PROG ---------
 void setup() {
   if(DEBUG){
@@ -205,14 +207,19 @@ void setup() {
 
   //Save data as bin on SD
   //TODO
-  bootCount++;
+  createBin("/"+ String(bootCount)+".bin", data);
 
   //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
+    for(byte i = 0; i<bootCount; i++){
+      readBin("/" + String(i)+ ".bin", bin_Tempo);
+    }
     //TODO : Moyenne
     logCSV(DATA_FILE, data); //TODO: Send data moyenné
     sendSAT(data);
   }
+
+  bootCount++;
 
   //Sleep
   goToSleep(3600 / config.acquisitionParHeure);  

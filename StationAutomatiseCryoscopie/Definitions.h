@@ -57,8 +57,8 @@
 
 //---------- Flags --------------
 #define DEBUG false
-#define DEBUG_SETUP true
-#define DEBUG_SAT false
+#define PRINT_DEBUG true
+#define SEND_SAT false
 #define SLEEP_EN false
 
 //---------- Configs ------------
@@ -70,7 +70,7 @@
 #define CONFIG_FILE "/config.json"
 
 //---------- MACROS -------------
-#if DEBUG || DEBUG_SETUP
+#if PRINT_DEBUG
   #define D(...) (__VA_ARGS__)
 #else
   #define D(...) (void(0))

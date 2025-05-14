@@ -323,7 +323,7 @@ void loop() {
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
   logCSV(DATA_FILE, data);
-  if(DEBUG_SAT){
+  if(SEND_SAT){
     sendSAT(data);
   }
   

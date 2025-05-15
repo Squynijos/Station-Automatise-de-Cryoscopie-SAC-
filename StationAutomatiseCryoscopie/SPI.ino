@@ -48,7 +48,7 @@ bool initSPI(){ //Fonctionnelle
 
   createDir("/binary");
 
-  //TODO: Directory pour les bin si existe pas
+  //TODO: Clear binary dir
 
   return true;
 }
@@ -58,37 +58,7 @@ bool deinitSPI(){
   return true;
 }
 
-// void listDir(const char* dirname, uint8_t levels){
-//   Serial.printf("Listing directory: %s\n", dirname);
-
-//   File root = SD.open(dirname);
-//   if(!root){
-//     Serial.println("Failed to open directory");
-//     return;
-//   }
-//   if(!root.isDirectory()){
-//     Serial.println("Not a directory");
-//     return;
-//   }
-
-//   File file = root.openNextFile();
-//   while(file){
-//     if(file.isDirectory()){
-//       Serial.print("  DIR : ");
-//       Serial.println(file.name());
-//       if(levels){
-//         listDir(SD, file.name(), levels -1);
-//       }
-//     } else {
-//       Serial.print("  FILE: ");
-//       Serial.print(file.name());
-//       Serial.print("  SIZE: ");
-//       Serial.println(file.size());
-//     }
-//     file = root.openNextFile();
-//   }
-// }
-
+//----- Folders -----
 void createDir(const char* path){
   D(Serial.printf("Creating Dir: %s\n", path));
   if(SD.mkdir(path)){
@@ -97,15 +67,6 @@ void createDir(const char* path){
     D(Serial.println("\t- mkdir failed"));
   }
 }
-
-// void removeDir(const char* path){
-//   Serial.printf("Removing Dir: %s\n", path);
-//   if(SD.rmdir(path)){
-//     Serial.println("Dir removed");
-//   } else {
-//     Serial.println("rmdir failed");
-//   }
-// }
 
 //----- JSON -----
 bool createJson(const char* path, Config &cfg){ //Fonctionnelle
@@ -274,6 +235,96 @@ bool readBin(const char* path, DataStruct &ds){ //Fonctionnelle
   return true;
 }
 
+void moyenneBin(DataStruct &ds){ //TODO
+  D(Serial.println("Averaging data"));
+
+  //Structure temporaire pour l'ouverture des fichiers
+  DataStruct tempData;
+
+  float moyenne = 0.0;
+
+  //opening binary folder
+  D(Serial.println("\t- Opening folder"));
+  File dir = SD.open("/binary");
+
+  //Adding data
+  while(true){
+    //Opening file
+    File file = dir.openNextFile();
+
+    //Verif que c'es une fichier
+    if(!file){
+      D(Serial.println("\t> No more file"));
+      break; //Il n'y a plus de file
+    }
+
+    //Get le nom
+    const char* fileName = file.name();
+
+    //Lecture et addition des valeurs
+    D(Serial.println("\t- Reading file: " + String(fileName)));
+    if (readBin('/binary/' + fileName, tempData)){
+      ds.m.tempInt += tempData.m.tempInt;
+      ds.m.tempExt += tempData.m.tempExt;
+
+      ds.m.humInt += tempData.m.humInt;
+      ds.m.humExt += tempData.m.humExt;
+
+      ds.m.pressExt += tempData.m.pressExt;
+
+      ds.m.lum += tempData.m.lum;
+
+      ds.m.vitVent += tempData.m.vitVent;
+      ds.m.dirVent += tempData.m.dirVent;
+      moyenne++;
+    }
+
+
+    //Removing file
+    file.close();
+    deleteFile('/binary/'+fileName);
+  }
+
+  // while(!readBin('/binary/' + String(nbFile).c_str() + '.bin', ds)){
+  //   nbFile++;
+  // }
+
+  // for(byte i = nbFile+1; i < config.acquisitionParHeure; i++){
+  //   if (readBin('/binary/' + String(i).c_str()+ '.bin', tempData)){
+  //     deleteFile();
+
+  //     ds.m.tempInt = ds.m.tempInt + tempData.m.tempInt;
+  //     ds.m.tempExt = ds.m.tempExt + tempData.m.tempExt;
+
+  //     ds.m.humInt = ds.m.humInt + tempData.m.humInt;
+  //     ds.m.humExt = ds.m.humExt + tempData.m.humExt;
+
+  //     ds.m.pressExt = ds.m.pressExt + tempData.m.pressExt;
+
+  //     ds.m.lum = ds.m.lum + tempData.m.lum;
+
+  //     ds.m.vitVent = ds.m.vitVent + tempData.m.vitVent;
+  //     ds.m.dirVent = ds.m.dirVent + tempData.m.dirVent;
+  //     moyenne++;
+  //   }
+  // }
+
+  //###-MOYENNE-###
+  D(Serial.println("\t- Division par:" + String(moyenne)));
+  ds.m.tempInt = ds.m.tempInt /moyenne;
+  ds.m.tempExt = ds.m.tempExt /moyenne;
+
+  ds.m.humInt = ds.m.humInt /moyenne;
+  ds.m.humExt = ds.m.humExt /moyenne;
+
+  ds.m.pressExt = ds.m.pressExt /moyenne;
+
+  ds.m.lum = ds.m.lum /moyenne;
+
+  ds.m.vitVent = ds.m.vitVent /moyenne;
+  ds.m.dirVent = ds.m.dirVent /moyenne;
+}
+
 //----- CSV -----
 bool createCSV(const char * path, const char * header){ //Fonctionnelle
   D(Serial.printf("Writing csv: %s\n", path));
@@ -348,56 +399,5 @@ bool deleteFile(const char* path){ //Fonctionnelle
   return true;
 }
 
-bool moyenneBin(DataStruct &ds){ //TODO
-  D(Serial.println("Averaging data"));
 
-  //Structure temporaire pour l'ouverture des fichiers
-  DataStruct bin_Tempo;
-
-  int moyenne = 0;
-  int nbFile = 0;
-
-  while(!readBin('/binary/' + String(nbFile).c_str() + '.bin', ds)){
-    nbFile++;
-  }
-
-  for(byte i = nbFile+1; i < config.acquisitionParHeure; i++){
-    if (readBin('/' + String(i).c_str()+ '.bin', bin_Tempo)){
-
-    ds.m.tempInt = ds.m.tempInt + bin_Tempo.m.tempInt;
-    ds.m.tempExt = ds.m.tempExt + bin_Tempo.m.tempExt;
-
-    ds.m.humInt = ds.m.humInt + bin_Tempo.m.humInt;
-    ds.m.humExt = ds.m.humExt + bin_Tempo.m.humExt;
-
-    ds.m.pressExt = ds.m.pressExt + bin_Tempo.m.pressExt;
-
-    ds.m.lum = ds.m.lum + bin_Tempo.m.lum;
-
-    ds.m.vitVent = ds.m.vitVent + bin_Tempo.m.vitVent;
-    ds.m.dirVent = ds.m.dirVent + bin_Tempo.m.dirVent;
-    moyenne++;
-    }
-    else{
-      moyenne--;
-    }
-
-
-    // ds.m.vBat = ds.m.vBat + bin_Tempo.m.vBat;
-  }
-
-  //###-MOYENNE-###
-  ds.m.tempInt = ds.m.tempInt /moyenne;
-  ds.m.tempExt = ds.m.tempExt /moyenne;
-
-  ds.m.humInt = ds.m.humInt /moyenne;
-  ds.m.humExt = ds.m.humExt /moyenne;
-
-  ds.m.pressExt = ds.m.pressExt /moyenne;
-
-  ds.m.lum = ds.m.lum /moyenne;
-
-  ds.m.vitVent = ds.m.vitVent /moyenne;
-  ds.m.dirVent = ds.m.dirVent /moyenne;
-}
 

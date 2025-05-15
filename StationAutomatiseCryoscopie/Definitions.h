@@ -56,7 +56,7 @@
 #define REG_LUM   1
 
 //---------- Flags --------------
-#define DEBUG true
+#define DEBUG false
 #define PRINT_DEBUG true
 #define SEND_SAT false
 #define SLEEP_EN true

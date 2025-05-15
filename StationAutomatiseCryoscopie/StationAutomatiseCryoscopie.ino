@@ -141,7 +141,9 @@ void setup() {
     delay(500);
 
     //On active tout
-    wakeup();
+    if(SLEEP_EN){
+      wakeup();
+    }
 
     initPower();
     enable3V3();
@@ -155,18 +157,6 @@ void setup() {
     initRTC();
     initUART();
 
-
-    // SerialSatGps.end();
-    // delay(300);
-    // //Active le switch sur le bon appareil
-    // digitalWrite(P_SAT, HIGH);
-    // digitalWrite(P_S0, HIGH);
-    // digitalWrite(P_S1, LOW);
-    // SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_TX_SW, P_RX_SW);
-
-    // sendSAT(data);
-    // SerialSatGps.end();
-
     //On skip le reste du setup
     return;
     Serial.println("Should not print");
@@ -175,15 +165,15 @@ void setup() {
   //### NON DEBUG CODE ###
   readVBat(data);
   if(data.m.vBat < BAT_CUT_OFF){
+    D(Serial.println("! Battery to low"));
     bootCount++;
-    goToSleep(3600 / config.acquisitionParHeure);
+    goToSleep(30); //3600 / config.acquisitionParHeure
   }
   wakeup();
 
   //Power on internal devices and configurations
   initPower();
   enable3V3();
-
 
   //Init SPI et Read config file, doit être fait en premier pour obtenir les configs
   initSPI();
@@ -227,22 +217,20 @@ void setup() {
     logCSV(DATA_FILE, avData);
 
     //Sending data
-    sendSAT(avData);
-
+    if(SEND_SAT){
+      sendSAT(avData);
+    }
   }
 
   bootCount++;
 
   //Sleep
   deinitSPI();
-  goToSleep(3600 / config.acquisitionParHeure);  
+  goToSleep(30);  //3600 / config.acquisitionParHeure
 }
 
 //--------- LOOP DE DBG ---------
 void loop() {
-  if(SLEEP_EN){
-    wakeup();
-  }
 
   //Read all values
   Serial.println("---------------- Start --------------");
@@ -288,12 +276,25 @@ void loop() {
   Serial.println("AccelX:\t\t"  + String(data.m.accelX));
   Serial.println("AccelY:\t\t"  + String(data.m.accelY));
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
+  Serial.println();
 
   logCSV(DATA_FILE, data);
 
   char binName[12];
   sprintf(binName, "/binary/%02d.bin", bootCount);
   createBin(binName, data);
+
+  Serial.println("Checking content of binary");
+  File dir = SD.open("/binary");
+  while(true){
+    File file = dir.openNextFile();
+    if(!file){
+      break;
+    }
+    const char* fileName = file.name();
+    Serial.println(fileName);
+  }
+
   if(SEND_SAT){
     sendSAT(data);
   }

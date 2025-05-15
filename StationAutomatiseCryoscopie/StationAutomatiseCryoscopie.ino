@@ -136,6 +136,7 @@ DataStruct bin_Tempo;
 
 //--------- MAIN PROG ---------
 void setup() {
+  D(Serial.begin(115200));
   if(DEBUG){
     Serial.begin(115200);
     delay(500);

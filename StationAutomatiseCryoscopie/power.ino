@@ -25,7 +25,10 @@ void readVBat(DataStruct &ds){ //À TESTER
 }
 
 void goToSleep(unsigned long sleepTime){ //À TESTER
+  D(Serial.println("Starting Sleep"));
+
   //Éteindre les sources d'alimentation
+  D(Serial.println("\t - Disabling Voltages"));
   disable12V();
   disable5V();
   disable3V3();
@@ -35,6 +38,7 @@ void goToSleep(unsigned long sleepTime){ //À TESTER
   esp_sleep_enable_timer_wakeup(sleepTime * 1000000); //time in us
 
   // Configuration des périphériques à conserver en fonction
+  D(Serial.println("\t - Holding Pins"));
   if(firstBoot){
     firstBoot = false;
     gpio_deep_sleep_hold_en();
@@ -44,6 +48,7 @@ void goToSleep(unsigned long sleepTime){ //À TESTER
   gpio_hold_en(static_cast<gpio_num_t>(P_SHDN_3V3));
 
   // Mettre le esp32 en deep sleep
+  D(Serial.println("\t - Starting Sleep"));
   esp_deep_sleep_start();
 }
 

@@ -3,6 +3,7 @@
 bool initSPI(){ //Fonctionnelle
   // Initialisation de la SD
   D(Serial.println("Initializing SD Card"));
+  delay(100);
   if(!SD.begin(P_CS_SD)){
     D(Serial.println("\t! Card Mount Failed"));
     return false;
@@ -45,6 +46,8 @@ bool initSPI(){ //Fonctionnelle
     readJson(CONFIG_FILE, config);
   }
 
+  createDir("/binary");
+
   //TODO: Directory pour les bin si existe pas
 
   return true;
@@ -86,14 +89,14 @@ bool deinitSPI(){
 //   }
 // }
 
-// void createDir(const char* path){
-//   Serial.printf("Creating Dir: %s\n", path);
-//   if(SD.mkdir(path)){
-//     Serial.println("Dir created");
-//   } else {
-//     Serial.println("mkdir failed");
-//   }
-// }
+void createDir(const char* path){
+  D(Serial.printf("Creating Dir: %s\n", path));
+  if(SD.mkdir(path)){
+    D(Serial.println("\t> Dir created"));
+  } else {
+    D(Serial.println("\t- mkdir failed"));
+  }
+}
 
 // void removeDir(const char* path){
 //   Serial.printf("Removing Dir: %s\n", path);
@@ -343,5 +346,58 @@ bool deleteFile(const char* path){ //Fonctionnelle
   }
 
   return true;
+}
+
+bool moyenneBin(DataStruct &ds){ //TODO
+  D(Serial.println("Averaging data"));
+
+  //Structure temporaire pour l'ouverture des fichiers
+  DataStruct bin_Tempo;
+
+  int moyenne = 0;
+  int nbFile = 0;
+
+  while(!readBin('/binary/' + String(nbFile).c_str() + '.bin', ds)){
+    nbFile++;
+  }
+
+  for(byte i = nbFile+1; i < config.acquisitionParHeure; i++){
+    if (readBin('/' + String(i).c_str()+ '.bin', bin_Tempo)){
+
+    ds.m.tempInt = ds.m.tempInt + bin_Tempo.m.tempInt;
+    ds.m.tempExt = ds.m.tempExt + bin_Tempo.m.tempExt;
+
+    ds.m.humInt = ds.m.humInt + bin_Tempo.m.humInt;
+    ds.m.humExt = ds.m.humExt + bin_Tempo.m.humExt;
+
+    ds.m.pressExt = ds.m.pressExt + bin_Tempo.m.pressExt;
+
+    ds.m.lum = ds.m.lum + bin_Tempo.m.lum;
+
+    ds.m.vitVent = ds.m.vitVent + bin_Tempo.m.vitVent;
+    ds.m.dirVent = ds.m.dirVent + bin_Tempo.m.dirVent;
+    moyenne++;
+    }
+    else{
+      moyenne--;
+    }
+
+
+    // ds.m.vBat = ds.m.vBat + bin_Tempo.m.vBat;
+  }
+
+  //###-MOYENNE-###
+  ds.m.tempInt = ds.m.tempInt /moyenne;
+  ds.m.tempExt = ds.m.tempExt /moyenne;
+
+  ds.m.humInt = ds.m.humInt /moyenne;
+  ds.m.humExt = ds.m.humExt /moyenne;
+
+  ds.m.pressExt = ds.m.pressExt /moyenne;
+
+  ds.m.lum = ds.m.lum /moyenne;
+
+  ds.m.vitVent = ds.m.vitVent /moyenne;
+  ds.m.dirVent = ds.m.dirVent /moyenne;
 }
 

@@ -11,10 +11,14 @@ void initUART(){ //À TESTER
   digitalWrite(P_SAT, LOW);
 
   //Default to gps
+  D(Serial.println("Configurating GPS"));
   SerialSatGps.begin(config.gps.baud, SERIAL_8N1, P_RX_SW, P_TX_SW);
-  delay(10);
-  gps.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); //Use RMC and GGA
+  while(!SerialSatGps){
+    D(Serial.print("."));
+  }
+  SerialSatGps.println(PMTK_SET_NMEA_OUTPUT_OFF);//gps.sendCommand(PMTK_SET_NMEA_OUTPUT_OFF); //Use RMC and GGA
   gps.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ); //Update rate = 1Hz
+  D(Serial.println("\t> Done"));
 
   //Configure Satellite
   D(Serial.println("Configurating Modem"));
@@ -30,7 +34,7 @@ bool readGPS(DataStruct &ds){ //Fonctionnel
   D(Serial.println("\t- Selecting Port"));
   digitalWrite(P_S0, LOW);
   digitalWrite(P_S1, LOW);
-  SerialSatGps.begin(config.gps.baud, SERIAL_8N1, P_RX_SW, P_TX_SW);
+  //SerialSatGps.begin(config.gps.baud, SERIAL_8N1, P_RX_SW, P_TX_SW);
 
   //attente d'un message
   D(Serial.println("\t- Waiting for NMEA"));
@@ -44,6 +48,7 @@ bool readGPS(DataStruct &ds){ //Fonctionnel
 
     //Timeout
     if(millis() - startTime > config.gps.timeout*1000){
+      D(Serial.println("\t! GPS Timeout"));
       return false;
     }
 
@@ -52,12 +57,12 @@ bool readGPS(DataStruct &ds){ //Fonctionnel
     //On décode le message recu
     if(gps.newNMEAreceived()){
       char* s = gps.lastNMEA();
-      D(Serial.println("\t- Last NMEA: " + String(s)));
+      D(Serial.print("\t- Last NMEA: " + String(s)));
       if(!gps.parse(s)){
         D(Serial.println("\t! Parsing error"));
         continue;
       }
-      if(DEBUG){
+      if(PRINT_DEBUG){
         Serial.print("\nTime: ");
         if (gps.hour < 10) { Serial.print('0'); }
         Serial.print(gps.hour, DEC); Serial.print(':');
@@ -115,7 +120,7 @@ bool readGPS(DataStruct &ds){ //Fonctionnel
   D(Serial.println(((int)gps.year) + 2000));
   unsigned long gpsEpoch = makeTime(tm); // Change the tm structure into time_t (seconds since epoch)
 
-  if(DEBUG){
+  if(PRINT_DEBUG){
     // Get RTC epoch time
     unsigned long rtcEpoch = rtc.getEpoch();
 

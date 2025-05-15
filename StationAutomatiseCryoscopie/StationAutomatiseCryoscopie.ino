@@ -41,7 +41,6 @@
 #include "Sodaq_LSM303AGR.h" //2.0.1
 #include <SPI.h>
 #include "TimeLib.h"         // https://github.com/PaulStoffregen/Time (v1.6.1)
-#include "TinyGPS++.h"       // https://github.com/mikalhart/TinyGPSPlus (v1.0.3)
 #include <Wire.h>
  
 //--------- OBJECTS ---------
@@ -132,7 +131,7 @@ union DataStruct{
 };
 DataStruct data;
 
-DataStruct bin_Tempo;
+
 
 //--------- MAIN PROG ---------
 void setup() {
@@ -142,6 +141,8 @@ void setup() {
     delay(500);
 
     //On active tout
+    wakeup();
+
     initPower();
     enable3V3();
     enable5V();
@@ -183,6 +184,7 @@ void setup() {
   initPower();
   enable3V3();
 
+
   //Init SPI et Read config file, doit être fait en premier pour obtenir les configs
   initSPI();
 
@@ -205,70 +207,34 @@ void setup() {
   disable12V();
 
   //Read GPS et sync RTC
-  readGPS(data);
+  //readGPS(data);
 
   //Save data as bin on SD
-  //TODO
   int envoie = bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure);
-  createBin('/' + String(envoie).c_str() +'.bin', data);
+  char binName[12];
+  sprintf(binName, "/binary/%02d.bin", envoie);
+  createBin(binName, data);
 
   //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
-    int moyenne = 0;
-    int nbFile = 0;
-    while(!readBin('/' + String(nbFile).c_str() + '.bin', data)){
-      nbFile++;
-    }
+    D(Serial.println("Starting sending process..."));
 
-    for(byte i = nbFile+1; i < config.acquisitionParHeure; i++){
-      if (readBin('/' + String(i).c_str()+ '.bin', bin_Tempo)){
+    //Moyenne du data
+    DataStruct avData;
+    moyenneBin(avData);
+    
+    //Logging data
+    logCSV(DATA_FILE, avData);
 
-      data.m.tempInt = data.m.tempInt + bin_Tempo.m.tempInt;
-      data.m.tempExt = data.m.tempExt + bin_Tempo.m.tempExt;
-
-      data.m.humInt = data.m.humInt + bin_Tempo.m.humInt;
-      data.m.humExt = data.m.humExt + bin_Tempo.m.humExt;
-
-      data.m.pressExt = data.m.pressExt + bin_Tempo.m.pressExt;
-
-      data.m.lum = data.m.lum + bin_Tempo.m.lum;
-
-      data.m.vitVent = data.m.vitVent + bin_Tempo.m.vitVent;
-      data.m.dirVent = data.m.dirVent + bin_Tempo.m.dirVent;
-      moyenne++;
-      }
-      else{
-        moyenne--;
-      }
-
-
-      // data.m.vBat = data.m.vBat + bin_Tempo.m.vBat;
-    }
-
-    //###-MOYENNE-###
-    data.m.tempInt = data.m.tempInt /moyenne;
-    data.m.tempExt = data.m.tempExt /moyenne;
-
-    data.m.humInt = data.m.humInt /moyenne;
-    data.m.humExt = data.m.humExt /moyenne;
-
-    data.m.pressExt = data.m.pressExt /moyenne;
-
-    data.m.lum = data.m.lum /moyenne;
-
-    data.m.vitVent = data.m.vitVent /moyenne;
-    data.m.dirVent = data.m.dirVent /moyenne;
-
-    //data.m.vBat = data.m.vBat /(bootcount+1);
-    //TODO : Moyenne
-    logCSV(DATA_FILE, data); //TODO: Send data moyenné
-    sendSAT(data);
+    //Sending data
+    sendSAT(avData);
 
   }
 
   bootCount++;
 
   //Sleep
+  deinitSPI();
   goToSleep(3600 / config.acquisitionParHeure);  
 }
 
@@ -291,11 +257,11 @@ void loop() {
   readLum(data);
   readBmeInt(data);
   readMagAccel(data);
-  readGPS(data);
+  //readGPS(data);
   readRTC(data);
 
   //Print result
-  Serial.println("---------------- Values -------------");
+  Serial.println("------------- Values #" + String(bootCount) + " -------------");
   Serial.println("iteration:\t" + String(data.m.iteration));
 
   Serial.println("timestamp:\t" + String(data.m.timestamp));
@@ -324,6 +290,10 @@ void loop() {
   Serial.println("AccelZ:\t\t"  + String(data.m.accelZ));
 
   logCSV(DATA_FILE, data);
+
+  char binName[12];
+  sprintf(binName, "/binary/%02d.bin", bootCount);
+  createBin(binName, data);
   if(SEND_SAT){
     sendSAT(data);
   }
@@ -332,11 +302,12 @@ void loop() {
   Serial.println();
   Serial.println();
 
+  bootCount++;
   if(SLEEP_EN){
-    SPI.end();
+    deinitSPI();
     disable3V3();
     disable12V();
-    goToSleep(60);
+    goToSleep(30);
   }
   delay(20000);
 }

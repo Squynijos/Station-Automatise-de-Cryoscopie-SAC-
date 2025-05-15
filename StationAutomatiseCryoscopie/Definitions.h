@@ -56,10 +56,10 @@
 #define REG_LUM   1
 
 //---------- Flags --------------
-#define DEBUG false
+#define DEBUG true
 #define PRINT_DEBUG true
 #define SEND_SAT false
-#define SLEEP_EN false
+#define SLEEP_EN true
 
 //---------- Configs ------------
 #define BAUD_DEBUG 115200

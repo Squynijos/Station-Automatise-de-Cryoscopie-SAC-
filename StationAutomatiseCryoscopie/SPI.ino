@@ -263,7 +263,8 @@ void moyenneBin(DataStruct &ds){ //TODO
 
     //Lecture et addition des valeurs
     D(Serial.println("\t- Reading file: " + String(fileName)));
-    if (readBin('/binary/' + fileName, tempData)){
+    if (readBin(("/binary/" + String(fileName)).c_str(), tempData)){
+      D(Serial.println("\t- Adding data"));
       ds.m.tempInt += tempData.m.tempInt;
       ds.m.tempExt += tempData.m.tempExt;
 
@@ -279,35 +280,10 @@ void moyenneBin(DataStruct &ds){ //TODO
       moyenne++;
     }
 
-
     //Removing file
     file.close();
-    deleteFile('/binary/'+fileName);
+    deleteFile(("/binary/" + String(fileName)).c_str());
   }
-
-  // while(!readBin('/binary/' + String(nbFile).c_str() + '.bin', ds)){
-  //   nbFile++;
-  // }
-
-  // for(byte i = nbFile+1; i < config.acquisitionParHeure; i++){
-  //   if (readBin('/binary/' + String(i).c_str()+ '.bin', tempData)){
-  //     deleteFile();
-
-  //     ds.m.tempInt = ds.m.tempInt + tempData.m.tempInt;
-  //     ds.m.tempExt = ds.m.tempExt + tempData.m.tempExt;
-
-  //     ds.m.humInt = ds.m.humInt + tempData.m.humInt;
-  //     ds.m.humExt = ds.m.humExt + tempData.m.humExt;
-
-  //     ds.m.pressExt = ds.m.pressExt + tempData.m.pressExt;
-
-  //     ds.m.lum = ds.m.lum + tempData.m.lum;
-
-  //     ds.m.vitVent = ds.m.vitVent + tempData.m.vitVent;
-  //     ds.m.dirVent = ds.m.dirVent + tempData.m.dirVent;
-  //     moyenne++;
-  //   }
-  // }
 
   //###-MOYENNE-###
   D(Serial.println("\t- Division par:" + String(moyenne)));

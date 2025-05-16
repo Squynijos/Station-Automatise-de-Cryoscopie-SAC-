@@ -167,7 +167,7 @@ void setup() {
   if(data.m.vBat < BAT_CUT_OFF){
     D(Serial.println("! Battery to low"));
     bootCount++;
-    goToSleep(30); //3600 / config.acquisitionParHeure
+    goToSleep(3600 / config.acquisitionParHeure);
   }
   wakeup();
 
@@ -197,7 +197,7 @@ void setup() {
   disable12V();
 
   //Read GPS et sync RTC
-  //readGPS(data);
+  readGPS(data);
 
   //Save data as bin on SD
   int envoie = bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure);
@@ -226,7 +226,7 @@ void setup() {
 
   //Sleep
   deinitSPI();
-  goToSleep(30);  //3600 / config.acquisitionParHeure
+  goToSleep(3600 / config.acquisitionParHeure);
 }
 
 //--------- LOOP DE DBG ---------

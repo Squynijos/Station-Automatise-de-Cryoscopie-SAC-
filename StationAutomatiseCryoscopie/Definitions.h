@@ -58,7 +58,7 @@
 //---------- Flags --------------
 #define DEBUG false
 #define PRINT_DEBUG true
-#define SEND_SAT false
+#define SEND_SAT true
 #define SLEEP_EN true
 
 //---------- Configs ------------

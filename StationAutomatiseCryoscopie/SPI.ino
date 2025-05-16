@@ -241,7 +241,7 @@ void moyenneBin(DataStruct &ds){ //TODO
   //Structure temporaire pour l'ouverture des fichiers
   DataStruct tempData;
 
-  float moyenne = 0.0;
+  float moyenne = 1.0; //On a toujours au moins la struct de base
 
   //opening binary folder
   D(Serial.println("\t- Opening folder"));

@@ -177,21 +177,60 @@ bool sendSAT(DataStruct &ds){ //À TESTER
   //msgSat.transmitStatus      = ds.m.//uint8_t   EUX C'EST QUOI?
   msgSat.iterationCounter    = ds.m.iteration; //uint16_t  
 
+  if(PRINT_DEBUG){
+    Serial.println("--- DataStruct ---");
+    Serial.println("\tUnixtime  :" + String(ds.m.timestamp));
+    Serial.println("\tTempInt   :" + String(ds.m.tempInt));     
+    Serial.println("\tHumInt    :" + String(ds.m.humInt));        
+    Serial.println("\tPressExt  :" + String(ds.m.pressExt));        
+    Serial.println("\tTempExt   :" + String(ds.m.tempExt));     
+    Serial.println("\tHumExt    :" + String(ds.m.humExt));        
+    Serial.println("\tPitch     :" + String(ds.m.accelX));              
+    Serial.println("\tRoll      :" + String(ds.m.accelY));               
+    Serial.println("\tLum       :" + String(ds.m.lum));              
+    Serial.println("\tWindSp    :" + String(ds.m.vitVent));          
+    Serial.println("\tWindDr    :" + String(ds.m.dirVent));      
+    Serial.println("\tGustSpeed :" + String(-99));
+    Serial.println("\tGustDir   :" + String(-99));//
+    Serial.println("\tLatitude  :" + String(ds.m.latitude));           
+    Serial.println("\tLongitude :" + String(ds.m.longitude));          
+    Serial.println("\tSatellite :" + String(-99));
+    Serial.println("\tHautNeige :" + String(-99));       
+    Serial.println("\tVolt      :" + String(ds.m.vBat));            
+    Serial.println("\tDTransmit :" + String(-99));
+    Serial.println("\tTransStat :" + String(-99));
+    Serial.println("\tIteration :" + String(ds.m.iteration));  
+
+    Serial.println("--- Data SBD ---");
+    Serial.println("\tUnixtime  :" + String(msgSat.unixtime));
+    Serial.println("\tTempInt   :" + String(msgSat.temperatureInt));     
+    Serial.println("\tHumInt    :" + String(msgSat.humidityInt));        
+    Serial.println("\tPressExt  :" + String(msgSat.pressureExt));        
+    Serial.println("\tTempExt   :" + String(msgSat.temperatureExt));     
+    Serial.println("\tHumExt    :" + String(msgSat.humidityExt));        
+    Serial.println("\tPitch     :" + String(msgSat.pitch));              
+    Serial.println("\tRoll      :" + String(msgSat.roll));               
+    Serial.println("\tLum       :" + String(msgSat.solar));              
+    Serial.println("\tWindSp    :" + String(msgSat.windSpeed));          
+    Serial.println("\tWindDr    :" + String(msgSat.windDirection));      
+    Serial.println("\tGustSpeed :" + String(msgSat.windGustSpeed));
+    Serial.println("\tGustDir   :" + String(msgSat.windGustDirection));//
+    Serial.println("\tLatitude  :" + String(msgSat.latitude));           
+    Serial.println("\tLongitude :" + String(msgSat.longitude));          
+    Serial.println("\tSatellite :" + String(msgSat.satellites));
+    Serial.println("\tHautNeige :" + String(msgSat.hauteurNeige));       
+    Serial.println("\tVolt      :" + String(msgSat.voltage));            
+    Serial.println("\tDTransmit :" + String(msgSat.transmitDuration));
+    Serial.println("\tTransStat :" + String(msgSat.transmitStatus));
+    Serial.println("\tIteration :" + String(msgSat.iterationCounter));   
+  }
+
   //Assigne le bon Baudrate
   SerialSatGps.begin(config.sat.baud, SERIAL_8N1, P_TX_SW, P_RX_SW);
   delay(100);
 
   //Initialisation ou wakeup du sat
   D(Serial.println("Starting modem Iridium..."));
-  // digitalWrite(P_SAT, HIGH);
-  // SerialSatGps.print("AT/r");
-  // SerialSatGps.flush();
-  // int i = 0;
-  // uint8_t retCode = ISBD_CANCELLED;
-  // while(SerialSatGps.available()){
-  //   retCode = SerialSatGps.read();
-  //   Serial.println(retCode);
-  // }
   int retCode = modemSat.begin();
 
   //Verify the presence of Modem
@@ -230,15 +269,6 @@ bool sendSAT(DataStruct &ds){ //À TESTER
       {
         D(Serial.println("Hey, it worked!"));
         retVal = true;
-
-        // Clear the Mobile Originated message buffer
-        D(Serial.println("Clearing the MO buffer."));
-        //retCode = modemSat.clearBuffers(ISBD_CLEAR_MO); // Clear MO buffer
-        if (retCode != ISBD_SUCCESS)
-        {
-          D(Serial.print("clearBuffers failed: error "));
-          D(Serial.println(retCode));
-        }
       }
     }
   }

@@ -2,7 +2,7 @@
 
 bool initRTC(){ //À TESTER
   //rtc.begin(false); //true, ramènerait le time a 0
-  rtc.setTime(1609459200);
+  //rtc.setTime();
   unixtime = rtc.getEpoch();
 
   return true;

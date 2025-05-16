@@ -53,7 +53,7 @@ HardwareSerial SerialSatGps(Serial1);
 IridiumSBD modemSat(SerialSatGps, P_SAT);
 Adafruit_GPS gps(&SerialSatGps);
 
-ESP32Time rtc(-5*60*3600);
+ESP32Time rtc(-5*3600);
 
 // Modbus
 HardwareSerial SerialRS485(Serial2);
@@ -190,6 +190,7 @@ void setup() {
 
   //Get external sensors values
   enable12V();
+  delay(500);
   readDirVent(data);
   readVitVent(data);
   readBmeExt(data);
@@ -198,30 +199,31 @@ void setup() {
 
   //Read GPS et sync RTC
   readGPS(data);
+  readRTC(data);
 
-  //Save data as bin on SD
-  int envoie = bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure);
-  char binName[12];
-  sprintf(binName, "/binary/%02d.bin", envoie);
-  createBin(binName, data);
 
   //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
     D(Serial.println("Starting sending process..."));
 
     //Moyenne du data
-    DataStruct avData;
-    moyenneBin(avData);
+    moyenneBin(data);
     
     //Logging data
-    logCSV(DATA_FILE, avData);
+    logCSV(DATA_FILE, data);
 
     //Sending data
     if(SEND_SAT){
-      sendSAT(avData);
+      sendSAT(data);
     }
   }
-
+  else{
+    //Save data as bin on SD
+    int envoie = bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure);
+    char binName[12];
+    sprintf(binName, "/binary/%02d.bin", envoie);
+    createBin(binName, data);
+  }
   bootCount++;
 
   //Sleep

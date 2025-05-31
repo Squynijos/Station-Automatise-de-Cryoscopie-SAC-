@@ -99,9 +99,9 @@ uint16_t readBmeExt(DataStruct &ds){ //Fonctionnelle
   if(!errMB){
     D(Serial.println("\t> Data: " + String(reg[0]) +", "+ String(reg[1]) +", "+ String(reg[2])));
     D(Serial.println("\t> Erreur: " + String(errMB)));
-    ds.m.humExt     = reg[0]/10.0;
-    ds.m.tempExt    = reg[1]/10.0;
-    ds.m.pressExt   = reg[2]/10.0;
+    ds.m.humExt     = ((int16_t)reg[0])/10.0;
+    ds.m.tempExt    = ((int16_t)reg[1])/10.0;
+    ds.m.pressExt   = ((int16_t)reg[2])/10.0;
   }
   return errMB;
   // D(Serial.println("Reading BME280"));

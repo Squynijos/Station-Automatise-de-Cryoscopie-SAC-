@@ -108,6 +108,7 @@ bool readGPS(DataStruct &ds){ //Fonctionnel
   ds.m.latitude = gps.latitude_fixed;
   ds.m.longitude = gps.longitude_fixed;
   ds.m.hdop = gps.HDOP;
+  ds.m.nbSat = gps.satellites;
 
   tmElements_t tm;
   tm.Hour   = gps.hour;
@@ -166,15 +167,15 @@ bool sendSAT(DataStruct &ds){ //À TESTER
   msgSat.solar               = ds.m.lum * 10000;       //uint32_t  
   msgSat.windSpeed           = ds.m.vitVent * 100;   //uint16_t  
   msgSat.windDirection       = ds.m.dirVent * 10;   //uint16_t  
-  //msgSat.windGustSpeed       = ds.m.//uint16_t  EUX C'EST QUOI?
-  //msgSat.windGustDirection   = ds.m.//uint16_t  EUX C'EST QUOI?
-  msgSat.latitude            = ds.m.latitude * 1000000;  //int32_t   
-  msgSat.longitude           = ds.m.longitude * 1000000; //int32_t   
-  //msgSat.satellites          = ds.m.//uint8_t   
+  msgSat.windGustSpeed       = 0; //uint16_t  EUX C'EST QUOI?
+  msgSat.windGustDirection   = 0; //uint16_t  EUX C'EST QUOI?
+  msgSat.latitude            = ds.m.latitude/10; //* 1000000;  //int32_t   
+  msgSat.longitude           = ds.m.longitude/10; //* 1000000; //int32_t   
+  msgSat.satellites          = ds.m.nbSat;   //uint8_t   
   msgSat.hauteurNeige        = 0;            //uint16_t  
   msgSat.voltage             = ds.m.vBat * 100;      //uint16_t  
-  //msgSat.transmitDuration    = ds.m.//uint16_t  EUX C'EST QUOI?
-  //msgSat.transmitStatus      = ds.m.//uint8_t   EUX C'EST QUOI?
+  msgSat.transmitDuration    = 0; //uint16_t  EUX C'EST QUOI?
+  msgSat.transmitStatus      = 0; //uint8_t   EUX C'EST QUOI?
   msgSat.iterationCounter    = ds.m.iteration; //uint16_t  
 
   if(PRINT_DEBUG){

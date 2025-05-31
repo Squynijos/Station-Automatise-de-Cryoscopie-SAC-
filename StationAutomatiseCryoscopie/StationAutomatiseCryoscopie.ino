@@ -8,23 +8,11 @@
 
 
 /*------ TODO ------
-  - Modbus - Changement adresse - tester le retry
-  - SAT
   - Lecture batterie - à étalonner
   - Gestion Erreur
-  petite puce : logique du code
-  autre puce : Thingsboard
   puce cool: faire fonctionner si la carte sd n'est pas mount
   plus de puce: envoyer err par sat
   - Conserver dernière longitude/latitude pour avoir un fallback
-*/
-
-/*
-  1. Verifier le passage du UART sur port SAT
-  2. Tester le begin du modem
-  3. Test transmission bidon
-  4. Trouver le TB
-  5. Vérife de récupération
 */
 
 //--------- INCLUDES ---------
@@ -53,7 +41,7 @@ HardwareSerial SerialSatGps(Serial1);
 IridiumSBD modemSat(SerialSatGps, P_SAT);
 Adafruit_GPS gps(&SerialSatGps);
 
-ESP32Time rtc(-5*3600);
+ESP32Time rtc(0); //-5*3600
 
 // Modbus
 HardwareSerial SerialRS485(Serial2);
@@ -106,6 +94,7 @@ struct Mesures{
   float longitude;
   float latitude;
   float hdop;
+  int nbSat;
   float vBat;
   float angleVent;
   float dirVent;
@@ -167,9 +156,11 @@ void setup() {
   if(data.m.vBat < BAT_CUT_OFF){
     D(Serial.println("! Battery to low"));
     bootCount++;
-    goToSleep(3600 / config.acquisitionParHeure);
+    goToSleep(3600 / config.acquisitionParHeure - millis() / 1000);
   }
   wakeup();
+
+  //D(Serial.println(millis()));
 
   //Power on internal devices and configurations
   initPower();
@@ -190,10 +181,13 @@ void setup() {
 
   //Get external sensors values
   enable12V();
-  delay(500);
+  delay(1000);
   readDirVent(data);
+  delay(100);
   readVitVent(data);
+  delay(100);
   readBmeExt(data);
+  delay(100);
   readLum(data);
   disable12V();
 
@@ -201,6 +195,7 @@ void setup() {
   readGPS(data);
   readRTC(data);
 
+  data.m.iteration = bootCount;
 
   //Moyenne des données après X iterations déterminé par le nombre d'acquisition/heure et le nombre de transmission/jour
   if(bootCount % ((24 / config.sat.transmissionParJour)*config.acquisitionParHeure) == 0){
@@ -208,7 +203,7 @@ void setup() {
 
     //Moyenne du data
     moyenneBin(data);
-    
+
     //Logging data
     logCSV(DATA_FILE, data);
 
@@ -228,7 +223,7 @@ void setup() {
 
   //Sleep
   deinitSPI();
-  goToSleep(3600 / config.acquisitionParHeure);
+  goToSleep(3600 / config.acquisitionParHeure - millis() / 1000);
 }
 
 //--------- LOOP DE DBG ---------
@@ -241,8 +236,9 @@ void loop() {
 
   //Read values
   readVBat(data);
-  readDirVent(data);
   readVitVent(data);
+  delay(100);
+  readDirVent(data);
   readBmeExt(data);
   readLum(data);
   readBmeInt(data);
@@ -312,5 +308,5 @@ void loop() {
     disable12V();
     goToSleep(30);
   }
-  delay(20000);
+  delay(DEBUG_LOOP_TIME);
 }

@@ -17,11 +17,14 @@ void disable5V()  {digitalWrite(P_SHDN_5V, LOW);}
 void disable3V3() {digitalWrite(P_SHDN_3V3, LOW);}
 
 void readVBat(DataStruct &ds){ //À TESTER
-  float voltage = analogRead(P_VBAT);
+  D(Serial.println("Reading Battery Voltage"));
+  float voltage = analogRead(A4);
+  D(Serial.println("\t> Raw: " + String(voltage)));
   voltage *= ((1e7 + 1e6) / 1e6); // Multiply back 1 MOhm / (10 MOhm + 1 MOhm)
   voltage *= 3.3; // Multiply by 3.3V reference voltage
   voltage /= 4096; // Convert to voltage
   ds.m.vBat = voltage;
+  D(Serial.println("\t> Calcule: " + String(ds.m.vBat)));
 }
 
 void goToSleep(unsigned long sleepTime){ //À TESTER

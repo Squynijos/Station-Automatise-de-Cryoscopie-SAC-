@@ -36,9 +36,18 @@ struct Config{
   CapteurConf tempInt;
   CapteurConf humInt;
   CapteurConf pressInt;
-  CapteurConf tempExt;
-  CapteurConf humExt;
+  CapteurConf tempExt; //off: +0.5571  fact: 0.9941
+  CapteurConf humExt; //off: -2.4027   fact: 1.0523
   CapteurConf pressExt;
   CapteurConf anemo;
   CapteurConf girou;
+
+  // Constructor to set specific default values
+  Config() {
+    tempExt.offset = 0.5571f;
+    tempExt.facteur = 0.9941f;
+
+    humExt.offset = -2.4027f;
+    humExt.facteur = 1.0523f;
+  }
 };

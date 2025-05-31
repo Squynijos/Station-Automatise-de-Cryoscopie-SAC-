@@ -46,6 +46,28 @@ bool initSPI(){ //Fonctionnelle
     readJson(CONFIG_FILE, config);
   }
 
+  if(firstBoot){
+    //Clear previous binary files
+    D(Serial.println("Deleting previous bin files"));
+    File dir = SD.open("/binary");
+    while(true){
+      //Opening file
+      File file = dir.openNextFile();
+
+      //Verif que c'es une fichier
+      if(!file){
+        D(Serial.println("\t> No more file"));
+        break; //Il n'y a plus de file
+      }
+
+      //Get le nom
+      const char* fileName = file.name();
+
+      //Lecture et addition des valeurs
+      D(Serial.println("\t- Deleting file: " + String(fileName)));
+      deleteFile(("/binary/" + String(fileName)).c_str());
+    }
+  }  
   createDir("/binary");
 
   //TODO: Clear binary dir

@@ -63,6 +63,7 @@
 
 //---------- Configs ------------
 #define BAUD_DEBUG 115200
+#define DEBUG_LOOP_TIME 20000
 
 //---------- PATHS SD -----------
 #define HEADER "Timestamp, Longitude, Latitude, HDOP, VBat, TemperatureInt, PressionInt, HumiditeInt, AccelX, AccelY, AccelZ, TemperatureExt, PressionExt, HumiditeExt, VitesseVent, DirectionVent, AngleVent, Luminosite\n"
